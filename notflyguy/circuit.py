@@ -1,38 +1,75 @@
-"""Experimental rate dynamics over measured edges; not biological emulation."""
+"""Motor control over the measured circuit; not biological emulation.
+
+The controller is a thin adapter: :class:`~notflyguy.connectome.ConnectomeState`
+owns the measured recurrent structure, and
+:class:`~notflyguy.motor_projection.LegMotorReadout` owns the modeled mapping
+from motor neurons to FlyBody actuators.
+"""
+from __future__ import annotations
+
 import json
 from pathlib import Path
+
 import numpy as np
-from scipy.sparse import csr_matrix, diags
+
+from .connectome import ConnectomeState
 from .motor_projection import LegMotorReadout
+
+# The walk_on_ball task's reward target. Kept here so the controller and the
+# trainer cannot disagree about what the fly is being asked to do.
+TARGET_BALL_VELOCITY = np.array([0.0, -5.0, 0.0])
+VELOCITY_SCALE = 5.0
+DRIVE_CLIP = 2.0
 
 
 class MotorCircuitController:
-    def __init__(self, root, actuator_names, seed=0):
+    """Drive the circuit from ball velocity and read actuators off motor neurons."""
+
+    def __init__(self, root, actuator_names, seed=0, decay=0.2, drive_scale=6.0,
+                 action_limits=None):
         root = Path(root)
-        graph = np.load(root / 'motor-circuit.npz', allow_pickle=False)
-        self.ids = graph['body_ids']
-        self.motor_indices = graph['motor_indices']
-        self.upstream_indices = graph['upstream_indices']
-        counts = graph['synapse_counts'].astype(float)
-        matrix = csr_matrix((counts, (graph['post'], graph['pre'])), shape=(len(self.ids),len(self.ids)))
-        # Nonnegative anatomical coupling, row-normalized for bounded dynamics.
-        # No neurotransmitter-derived physiological signs are claimed here.
-        self.recurrent = diags(.8 / np.maximum(np.asarray(matrix.sum(axis=1)).ravel(), 1)) @ matrix
-        self.activity = np.zeros(len(self.ids))
-        self.input_weights = np.zeros((len(self.ids), 3))
-        self.input_weights[self.upstream_indices] = np.random.default_rng(seed).normal(0, .1, (len(self.upstream_indices),3))
-        neurons = json.loads((root / 'leg-motor-catalog.json').read_text())['neurons']
-        self.readout = LegMotorReadout(neurons, actuator_names, seed)
+        catalog = root / 'leg-motor-catalog.json'
+        if not catalog.exists():
+            raise FileNotFoundError(
+                f'Missing {catalog}. Run scripts/catalog_leg_neurons.py first.'
+            )
+        self.brain = ConnectomeState(root, seed=seed, gain=0.8, decay=decay,
+                                     drive_scale=drive_scale, drive_channels=3)
+        neurons = json.loads(catalog.read_text())['neurons']
+        self.readout = LegMotorReadout(neurons, actuator_names, seed, limits=action_limits)
 
-    def reset(self):
-        self.activity.fill(0)
+    # Circuit views kept for the dashboard and for existing callers.
+    @property
+    def ids(self):
+        return self.brain.body_ids
 
-    def step(self, ball_velocity):
+    @property
+    def motor_indices(self):
+        return self.brain.motor_indices
+
+    @property
+    def upstream_indices(self):
+        return self.brain.upstream_indices
+
+    @property
+    def recurrent(self):
+        return self.brain.recurrent
+
+    @property
+    def activity(self):
+        return self.brain.activity
+
+    def reset(self) -> None:
+        self.brain.reset()
+
+    def velocity_error(self, ball_velocity) -> np.ndarray:
         velocity = np.asarray(ball_velocity, dtype=float)
         if velocity.shape != (3,) or not np.isfinite(velocity).all():
             raise ValueError('Expected three finite ball velocity components')
-        # Modeled target-error injection, not identified biological sensory cells.
-        error = np.clip((np.array([0., -5., 0.]) - velocity) / 5, -2, 2)
-        target = np.tanh(self.recurrent @ self.activity + self.input_weights @ error)
-        self.activity = .8 * self.activity + .2 * target
-        return self.readout(self.activity[self.motor_indices])
+        return np.clip((TARGET_BALL_VELOCITY - velocity) / VELOCITY_SCALE, -DRIVE_CLIP, DRIVE_CLIP)
+
+    def step(self, ball_velocity) -> np.ndarray:
+        """Modeled sensory injection, not identified biological sensory cells."""
+        drive = self.velocity_error(ball_velocity)
+        self.brain.step(drive)
+        return self.readout(self.brain.motor_activity)

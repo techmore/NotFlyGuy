@@ -4,19 +4,37 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "notflyguy"
-version = "0.1.0"
+version = "0.2.0"
 description = "A connectome-powered fruit fly agent"
 requires-python = ">=3.10,<3.13"
-dependencies = []
+# numpy/scipy are required: the measured circuit, the trainable readouts, and
+# the group-chat policy are all built on them.
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+# Reading the released MaleCNS feather tables (scripts/fetch_connectome.py,
+# scripts/catalog_leg_neurons.py, scripts/extract_motor_circuit.py).
 connectome = ["pyarrow>=18"]
-body = ["flybody @ git+https://github.com/TuragaLab/flybody.git@d015e9bfe441bd90ae431bac24c55cb74bdbce26"]
+# The FlyBody/MuJoCo body and the dashboard's JPEG frames.
+body = [
+    "flybody @ git+https://github.com/TuragaLab/flybody.git@d015e9bfe441bd90ae431bac24c55cb74bdbce26",
+    "Pillow>=10",
+]
+all = ["notflyguy[dev,connectome,body]"]
 
 [project.scripts]
 notflyguy-demo = "notflyguy.demo:main"
 notflyguy-server = "notflyguy.server:main"
+notflyguy-benchmark = "notflyguy.benchmark:main"
+notflyguy-train = "notflyguy.train:main"
+notflyguy-train-chat = "notflyguy.train_chat:main"
+notflyguy-chatlog = "notflyguy.chatlog:main"
+notflyguy-corpus = "notflyguy.corpus:main"
+notflyguy-wiring-control = "notflyguy.wiring_control:main"
 
 [tool.setuptools.packages.find]
 include = ["notflyguy*"]

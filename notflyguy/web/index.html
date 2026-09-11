@@ -1,25 +1,448 @@
-<!doctype html>
-<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NotFlyGuy · Live habitat</title>
-<style>body{margin:0;background:#10131a;color:#e9f0ff;font:16px system-ui}main{max-width:1000px;margin:40px auto;padding:20px}.card{background:#181e29;border:1px solid #2d394d;border-radius:16px;padding:20px;margin:16px 0}img{width:100%;aspect-ratio:2;object-fit:contain;background:#0b0e13;border-radius:12px}.muted{color:#a5b3ca}.row{display:flex;gap:32px;flex-wrap:wrap}</style>
-<main><h1>NotFlyGuy</h1><p class="muted">Live FlyBody habitat · experimental motor controller</p>
-<div class="card"><img id="frame" alt="Live rendered FlyBody simulation"></div>
-<div class="card row"><div>Status <strong id="status">Connecting…</strong></div><div>Simulation step <strong id="step">—</strong></div><div>Goal <strong id="goal">—</strong></div></div>
-<p class="muted">The current controller sends zero motor commands. Connectome activity and learned movement are not implemented yet.</p>
-<div class="card"><h2>Signal connection</h2><p>Integration pending verification.</p><p id="message"></p></div></main>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NotFlyGuy · group chat habitat</title><style>
+*{box-sizing:border-box}
+body{margin:0;background:#101820;color:#e3edf3;font:16px system-ui,-apple-system,sans-serif}
+main{max-width:1180px;padding:24px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+h1{font-size:26px;margin:0}
+h2{font-size:18px;margin:0 0 12px}
+button,input,select{font:inherit}
+button{background:#304859;color:#fff;border:1px solid #688293;padding:10px 14px;border-radius:8px;cursor:pointer}
+button:hover:not(:disabled){background:#3b586c}
+button:disabled{opacity:.5;cursor:default}
+button.ghost{background:transparent}
+nav{display:flex;gap:8px;flex-wrap:wrap}
+.desk{position:relative;background:radial-gradient(ellipse at 65% 20%,#315663,#17232f 75%);border:1px solid #455d6a;border-radius:18px;overflow:hidden;margin:18px 0}
+.scene{width:100%;display:block}
+.monitor{position:absolute;left:44%;top:10%;width:46%;height:42%;background:#0b1820;border:2px solid #506771;border-radius:8px;padding:14px;display:flex;flex-direction:column;font:14px ui-monospace,monospace}
+.title{color:#94e9c7;border-bottom:1px solid #344e58;padding-bottom:8px;display:flex;justify-content:space-between;gap:8px}
+.messages{overflow:auto;flex:1}
+.messages p{line-height:1.45;overflow-wrap:anywhere;margin:.35em 0}
+.who{color:#94e9c7}
+.status{position:absolute;left:5%;top:10%;width:34%;line-height:1.5}
+.tag{font-size:12px;letter-spacing:2px;color:#94e9c7;margin-bottom:10px}
+#activity{font-size:19px}
+.muted{font-size:13px;color:#adbfcc;margin:8px 0}
+.controls{display:flex;gap:10px;margin:14px 0;flex-wrap:wrap}
+.controls input{flex:1;min-width:200px;padding:11px;background:#1b2935;color:#fff;border:1px solid #566f80;border-radius:8px}
+.controls select{padding:11px;background:#1b2935;color:#fff;border:1px solid #566f80;border-radius:8px}
+.typing .arm{animation:tap .16s infinite alternate;transform-box:fill-box;transform-origin:left top}
+.typing .second{animation-delay:.08s}
+.typing .key{animation:glow .25s infinite alternate}
+.reading .head{animation:read 1s infinite alternate;transform-box:fill-box;transform-origin:center}
+@keyframes tap{to{transform:translateY(10px) rotate(4deg)}}
+@keyframes glow{to{fill:#90f2cf}}
+@keyframes read{to{transform:rotate(-7deg)}}
+.grid{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:start}
+@media(max-width:880px){.grid{grid-template-columns:1fr}}
+.card{background:#16222c;border:1px solid #344e58;border-radius:14px;padding:16px}
+.feed{max-height:420px;overflow:auto}
+.msg{border-left:3px solid #344e58;padding:8px 0 8px 10px;margin-bottom:10px}
+.msg.fly{border-left-color:#94e9c7}
+.msg .meta{font-size:12px;color:#8fa7b6;display:flex;gap:10px;flex-wrap:wrap}
+.msg .body{margin:4px 0 0}
+.chip{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;border:1px solid #4d6b78}
+.chip.speak{background:#1d4a3a;border-color:#94e9c7;color:#bff5e0}
+.chip.silent{background:#3a2a1d;border-color:#c79a6a;color:#f0d0ab}
+.chip.info{background:#1d2f4a;border-color:#6a9ac7;color:#c4dcf5}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:150px 1fr 62px;gap:8px;align-items:center;font-size:12px}
+.bar .track{background:#0d1720;height:10px;border-radius:5px;overflow:hidden}
+.bar .fill{height:100%;background:linear-gradient(90deg,#2f7d63,#94e9c7)}
+.bar .val{text-align:right;color:#adbfcc;font-family:ui-monospace,monospace}
+.metrics{display:flex;flex-wrap:wrap;gap:18px;font-family:ui-monospace,monospace;font-size:13px}
+#frame{width:100%;max-width:640px;border-radius:10px;border:1px solid #344e58;background:#0b1820}
+pre{background:#0d1720;border:1px solid #344e58;border-radius:10px;padding:12px;overflow:auto;font-size:12px;max-height:420px}
+.verdict{border-left:4px solid #c79a6a;padding:10px 14px;background:#1e2733;border-radius:0 10px 10px 0;margin:10px 0}
+.verdict.ok{border-left-color:#94e9c7}
+.verdict.bad{border-left-color:#c76a6a}
+.pill{font-size:12px;padding:3px 9px;border-radius:99px;background:#22313d;border:1px solid #43606f}
+table{border-collapse:collapse;font-size:13px;width:100%}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid #2c3f4a}
+th{color:#94e9c7;font-weight:600}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style></head><body><main>
+<header>
+  <h1>NotFlyGuy</h1>
+  <nav>
+    <button id="tab-group" class="ghost">Group chat</button>
+    <button id="tab-research" class="ghost">Research</button>
+    <button id="tab-training" class="ghost">Training</button>
+  </nav>
+</header>
+
+<section class="desk" id="desk" aria-label="Fly at a keyboard facing a monitor">
+<svg class="scene" viewBox="0 0 1100 650" role="img" aria-label="Six-legged fly with its front legs on a keyboard facing a chat monitor">
+<defs><linearGradient id="wing"><stop stop-color="#c7f8ff" stop-opacity=".8"/><stop offset="1" stop-color="#8abbce" stop-opacity=".15"/></linearGradient></defs>
+<ellipse cx="550" cy="581" rx="460" ry="33" fill="#0b1219"/><path d="M85 491H1010L1080 545H25Z" fill="#77563f"/><path d="M25 545H1080V563H25Z" fill="#443126"/><path d="M110 563V650M994 563V650" stroke="#594334" stroke-width="24"/>
+<rect x="465" y="52" width="543" height="316" rx="18" fill="#667b87"/><path d="M696 368V420H635V436H822V420H760V368" fill="#627783"/>
+<path d="M494 448H843L884 500H453Z" fill="#8197a0" stroke="#354b57" stroke-width="5"/><g stroke="#344953" stroke-width="4"><path d="M509 457H831M495 469H844M482 482H856"/><path d="M525 452L510 490M552 452L540 490M579 452L570 490M606 452L600 490M633 452L630 490M660 452L660 490M687 452L690 490M714 452L720 490M741 452L750 490M768 452L780 490M795 452L810 490M822 452L840 490"/></g><path class="key" d="M571 472H596V481H569Z" fill="#d0e0e4"/><path class="key" d="M635 456H657V465H635Z" fill="#d0e0e4"/>
+<ellipse cx="325" cy="521" rx="123" ry="16" fill="#302c28" opacity=".6"/><g stroke="#192a32" stroke-width="11" stroke-linecap="round" fill="none"><path d="M305 414L240 455L218 513M332 432L313 483L333 520M364 425L394 475L425 516M295 396L218 428L185 486"/></g>
+<ellipse cx="308" cy="396" rx="65" ry="85" transform="rotate(-40 308 396)" fill="#686356" stroke="#263236" stroke-width="6"/><path d="M249 389L311 444M260 363L332 421M282 348L348 397" stroke="#333b38" stroke-width="12"/>
+<ellipse cx="289" cy="330" rx="43" ry="105" transform="rotate(-57 289 330)" fill="url(#wing)" stroke="#a8d2df" stroke-width="2"/><ellipse cx="331" cy="315" rx="39" ry="97" transform="rotate(-25 331 315)" fill="url(#wing)" stroke="#a8d2df" stroke-width="2"/><path d="M359 385L223 289M360 381L300 236" stroke="#b3dae5" opacity=".5" stroke-width="2"/>
+<ellipse cx="377" cy="389" rx="48" ry="58" transform="rotate(-27 377 389)" fill="#718074" stroke="#263236" stroke-width="5"/>
+<g class="head"><ellipse cx="409" cy="344" rx="49" ry="44" fill="#718074" stroke="#263236" stroke-width="5"/><ellipse cx="438" cy="340" rx="25" ry="32" fill="#d36747"/><ellipse cx="385" cy="335" rx="16" ry="25" fill="#d36747"/><ellipse cx="445" cy="330" rx="7" ry="10" fill="#ffd0a2" opacity=".7"/><path d="M411 307L416 285M396 308L387 288" stroke="#b5c3ab" stroke-width="5" stroke-linecap="round"/></g>
+<path class="arm" d="M403 390L470 420L550 467" stroke="#1a2c34" stroke-width="10" fill="none" stroke-linecap="round"/><path class="arm second" d="M392 411L463 450L592 480" stroke="#30474c" stroke-width="11" fill="none" stroke-linecap="round"/><text x="930" y="530" fill="#c9af92" font-size="14" font-family="monospace">NFG / 02</text></svg>
+<div class="status"><div class="tag" id="source">LIVE SIGNAL</div><div id="activity" role="status">Connecting…</div><div class="muted" id="circuit-mini"></div></div>
+<div class="monitor"><div class="title"><span>hermes transport</span><span id="connection">connecting</span></div><div class="messages" id="messages" role="log" aria-live="polite"><p>Waiting for Signal activity…</p></div></div>
+</section>
+
+<section id="view-group">
+<div class="grid">
+  <div class="card">
+    <h2>Group chat <span class="pill" id="policy-pill">policy: …</span></h2>
+    <p class="muted">Each incoming message drives the measured circuit. The trained readout decides whether the fly would speak and how long the reply should be. It never writes the words.</p>
+    <form class="controls" id="group-form">
+      <select id="sender" aria-label="Simulated participant"></select>
+      <input id="input" aria-label="Simulated group message" maxlength="500" placeholder="Say something in the group…" required>
+      <button id="send">Send to group</button>
+    </form>
+    <label class="muted"><input type="checkbox" id="ambient"> Ambient group chatter (simulated)</label>
+    <div class="feed" id="group-feed" role="log" aria-live="polite"></div>
+  </div>
+  <div class="card">
+    <h2>Connectome state</h2>
+    <p class="muted">Fixed recurrent dynamics over 1405 measured neurons. Activity is a model output, not a biological measurement.</p>
+    <div class="metrics" style="margin-bottom:12px">
+      <span id="ct-rms">RMS —</span><span id="ct-peak">peak —</span><span id="ct-motor">motor —</span>
+    </div>
+    <div class="bars" id="ct-bars"></div>
+    <h2 style="margin-top:20px">Last decision</h2>
+    <div id="last-decision" class="muted">No message seen yet.</div>
+  </div>
+</div>
+</section>
+
+<section id="view-research" hidden>
+<div class="grid">
+  <div class="card">
+    <h2>Live FlyBody frame</h2>
+    <img id="frame" alt="Live FlyBody ball simulation" src="/frame.jpg">
+    <p class="muted">Server-rendered camera frame, refreshed when the simulator advances.</p>
+  </div>
+  <div class="card">
+    <h2>Controller</h2>
+    <div class="metrics" style="flex-direction:column;gap:8px">
+      <span id="sim">—</span><span id="neurons">—</span><span id="edges">—</span>
+      <span id="reward">—</span><span id="episode">—</span><span id="ball">—</span>
+    </div>
+    <p class="muted" id="controller-note"></p>
+    <p class="muted">The motor readout is untrained until a locomotion checkpoint is
+      trained and loaded, so it holds each actuator near its rest midpoint. The
+      do-nothing baseline still scores higher than that, and no run has yet beaten
+      it by a real margin. Controller telemetry is not evidence of learned
+      locomotion.</p>
+  </div>
+</div>
+</section>
+
+<section id="view-training" hidden>
+  <div class="card">
+    <h2>Group-chat corpus</h2>
+    <p class="muted">The policy is limited by data, not by model capacity. Read this before
+      expecting the verdicts below to change.</p>
+    <div id="corpus-body" class="muted">Loading…</div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h2>What is actually established</h2>
+    <p class="muted">These come straight from the training reports on disk. A verdict that says "NOT ESTABLISHED" is the honest result, not a failure of the dashboard.</p>
+    <div id="verdicts"></div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h2>Raw report</h2>
+    <select id="report-pick"></select>
+    <pre id="report-json">Loading…</pre>
+  </div>
+</section>
+
+<p class="muted">Simulated messages are scripted and never sent to Signal. Desk movement is animation, not learned behaviour. Live Signal traffic appears on the transport monitor above. The circuit is a truncated motor-centred subgraph, not a whole brain.</p>
+</main>
 <script>
-const byId=id=>document.getElementById(id);
-const events=new EventSource('/events');
-let lastUpdate=0;
-events.onmessage=({data})=>{
- const state=JSON.parse(data);
- lastUpdate=Date.now();
- if(state.frame)byId('frame').src=state.frame;
- byId('status').textContent=state.paused?'Paused':state.frame?'Live':'Waiting for renderer';
- byId('step').textContent=state.timestep;
- byId('goal').textContent=state.goal;
- byId('message').textContent=state.last_message;
+const $ = id => document.getElementById(id);
+const delay = ms => new Promise(r => setTimeout(r, ms));
+
+const PARTICIPANTS = [
+  {id: 'alice', name: 'Alice'},
+  {id: 'bob', name: 'Bob'},
+  {id: 'carol', name: 'Carol'},
+];
+const CT_NAMES = ['mean activity','mean |activity|','activity RMS','mean motor','mean |motor|','mean upstream','mean |upstream|','peak activity'];
+const MAX_BAR = 1.0;
+
+let live = {phase: 'waiting', label: 'Waiting for Signal'};
+let lastPhase = null, demo = false, lastUpdate = 0, reports = {};
+
+/* ---------- scene / activity ---------- */
+function activity(phase, label, source) {
+  $('desk').classList.toggle('typing', phase === 'typing');
+  $('desk').classList.toggle('reading', phase === 'reading');
+  $('activity').textContent = label;
+  $('source').textContent = source;
+}
+function transportMessage(who, text) {
+  const p = document.createElement('p'), name = document.createElement('span'), body = document.createElement('span');
+  name.className = 'who'; name.textContent = who + ' › '; body.textContent = text;
+  p.append(name, body); $('messages').append(p);
+  while ($('messages').children.length > 30) $('messages').firstChild.remove();
+  $('messages').scrollTop = $('messages').scrollHeight;
+}
+
+/* ---------- group chat ---------- */
+function initParticipants() {
+  const select = $('sender');
+  select.innerHTML = '';
+  for (const person of PARTICIPANTS) {
+    const option = document.createElement('option');
+    option.value = person.id; option.textContent = person.name;
+    select.append(option);
+  }
+}
+function appendGroupMessage({senderName, text, decision, simulated}) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg';
+  const meta = document.createElement('div'); meta.className = 'meta';
+  const who = document.createElement('strong'); who.textContent = senderName;
+  meta.append(who);
+  if (simulated) { const s = document.createElement('span'); s.className = 'chip info'; s.textContent = 'simulated'; meta.append(s); }
+  if (decision && decision.addressed) { const a = document.createElement('span'); a.className = 'chip info'; a.textContent = 'addressed to fly'; meta.append(a); }
+  if (decision && decision.policy_loaded) {
+    const prob = decision.respond_probability;
+    const chip = document.createElement('span');
+    chip.className = 'chip ' + (decision.would_respond ? 'speak' : 'silent');
+    chip.textContent = (decision.would_respond ? 'would speak' : 'would stay silent') + ' · p=' + prob.toFixed(3);
+    meta.append(chip);
+    const len = document.createElement('span');
+    len.className = 'chip'; len.textContent = 'reply length ≈ ' + (decision.predicted_reply_length * 100).toFixed(0) + '%';
+    meta.append(len);
+  } else if (decision) {
+    const chip = document.createElement('span'); chip.className = 'chip silent'; chip.textContent = 'no policy loaded'; meta.append(chip);
+  }
+  if (decision && decision.connectome) {
+    const ct = document.createElement('span');
+    ct.className = 'chip'; ct.textContent = 'circuit RMS ' + decision.connectome.rms.toFixed(3);
+    meta.append(ct);
+  }
+  const body = document.createElement('div'); body.className = 'body'; body.textContent = text;
+  wrap.append(meta, body);
+  $('group-feed').append(wrap);
+  while ($('group-feed').children.length > 40) $('group-feed').firstChild.remove();
+  $('group-feed').scrollTop = $('group-feed').scrollHeight;
+}
+function renderConnectome(decision) {
+  if (!decision || !decision.connectome) return;
+  const ct = decision.connectome;
+  $('ct-rms').textContent = 'RMS ' + ct.rms.toFixed(4);
+  $('ct-peak').textContent = 'peak ' + ct.peak.toFixed(4);
+  $('ct-motor').textContent = 'motor ' + ct.mean_motor.toFixed(4);
+  const host = $('ct-bars'); host.innerHTML = '';
+  ct.features.forEach((value, index) => {
+    const row = document.createElement('div'); row.className = 'bar';
+    const label = document.createElement('span'); label.textContent = CT_NAMES[index] || ('f' + index);
+    const track = document.createElement('div'); track.className = 'track';
+    const fill = document.createElement('div'); fill.className = 'fill';
+    fill.style.width = Math.min(100, Math.abs(value) / MAX_BAR * 100).toFixed(1) + '%';
+    if (value < 0) fill.style.background = 'linear-gradient(90deg,#8a5a2f,#c79a6a)';
+    track.append(fill);
+    const val = document.createElement('span'); val.className = 'val'; val.textContent = value.toFixed(3);
+    row.append(label, track, val); host.append(row);
+  });
+  const p = decision.respond_probability;
+  $('last-decision').innerHTML = '';
+  const line = document.createElement('div');
+  line.className = 'verdict ' + (decision.would_respond ? 'ok' : 'bad');
+  line.textContent = decision.would_respond
+    ? 'Would speak · p=' + p.toFixed(3) + ' · predicted length ' + (decision.predicted_reply_length * 100).toFixed(0) + '%'
+    : 'Would stay silent · p=' + p.toFixed(3);
+  $('last-decision').append(line);
+}
+async function sendGroupMessage(senderId, senderName, text) {
+  if (demo) return;
+  demo = true; $('send').disabled = true;
+  activity('reading', 'Reading the group message', 'GROUP CHAT');
+  const response = await fetch('/api/group-message', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({text, sender: senderId, sender_name: senderName, source: 'simulator'}),
+  });
+  const payload = await response.json().catch(() => ({}));
+  const decision = payload.decision || null;
+  appendGroupMessage({senderName, text, decision, simulated: true});
+  renderConnectome(decision);
+  activity('typing', decision && decision.would_respond ? 'Would reply in the group' : 'Holding back in the group', 'GROUP CHAT');
+  await delay(900);
+  demo = false; $('send').disabled = false;
+  activity(live.phase, live.label, 'LIVE SIGNAL');
+}
+$('group-form').addEventListener('submit', event => {
+  event.preventDefault();
+  const text = $('input').value.trim();
+  const senderId = $('sender').value;
+  const person = PARTICIPANTS.find(p => p.id === senderId) || PARTICIPANTS[0];
+  if (text && !demo) { $('input').value = ''; sendGroupMessage(person.id, person.name, text); }
+});
+const CHATTER = [
+  'Anyone around? The fly has been quiet.',
+  'notflyguy, what do you make of this?',
+  'Coffee run. Who is in?',
+  'Tiny keyboard, six legs. Excellent ergonomics.',
+  'Did the deploy finish?',
+];
+let chatterIndex = 0;
+setInterval(() => {
+  if ($('ambient').checked && !demo && live.phase !== 'typing') {
+    const person = PARTICIPANTS[chatterIndex % PARTICIPANTS.length];
+    const text = CHATTER[chatterIndex++ % CHATTER.length];
+    sendGroupMessage(person.id, person.name, text);
+  }
+}, 15000);
+
+/* ---------- tabs ---------- */
+function show(view) {
+  for (const name of ['group', 'research', 'training']) {
+    $('view-' + name).hidden = name !== view;
+    $('tab-' + name).classList.toggle('ghost', name !== view);
+  }
+  if (view === 'training') loadReports();
+}
+$('tab-group').onclick = () => show('group');
+$('tab-research').onclick = () => show('research');
+$('tab-training').onclick = () => show('training');
+
+/* ---------- training reports ---------- */
+function renderCorpus(report) {
+  const host = $('corpus-body');
+  host.innerHTML = '';
+  if (!report || report.error) {
+    host.textContent = report && report.error ? 'Corpus unavailable: ' + report.error : 'No corpus data.';
+    return;
+  }
+  const checks = report.readiness.checks;
+  const labels = {
+    group_sessions: 'distinct group conversations',
+    group_decision_points: 'messages the fly could learn from',
+    group_participants: 'distinct participants',
+  };
+  for (const [key, check] of Object.entries(checks)) {
+    const row = document.createElement('div');
+    row.className = 'bar';
+    const name = document.createElement('span');
+    name.textContent = (check.met ? '✓ ' : '· ') + (labels[key] || key);
+    const track = document.createElement('div'); track.className = 'track';
+    const fill = document.createElement('div'); fill.className = 'fill';
+    fill.style.width = Math.min(100, check.have / check.need * 100).toFixed(1) + '%';
+    if (!check.met) fill.style.background = 'linear-gradient(90deg,#8a5a2f,#c79a6a)';
+    track.append(fill);
+    const val = document.createElement('span'); val.className = 'val';
+    val.textContent = check.have + '/' + check.need;
+    row.append(name, track, val); host.append(row);
+  }
+  const verdict = document.createElement('div');
+  verdict.className = 'verdict ' + (report.readiness.ready ? 'ok' : 'bad');
+  const p = report.projection || {};
+  const eta = p.weeks_to_gate == null
+    ? 'no recent group activity, so there is no arrival estimate'
+    : '~' + p.weeks_to_gate + ' week(s) at the recent rate';
+  verdict.textContent = report.readiness.ready
+    ? 'READY: the trainer can now make a group-specific claim.'
+    : 'NOT READY: still short of ' + report.readiness.blockers.join(', ') + ' · ' + eta + '.';
+  host.append(verdict);
+
+  const note = document.createElement('p');
+  note.className = 'muted';
+  const b = report.label_balance;
+  note.textContent = 'Labels: ' + b.responded + ' reply / ' + b.silent + ' silent ('
+    + Math.round(b.respond_rate * 100) + '% reply). Group-only labels are less skewed than '
+    + 'the all-source mix, which is why these are counted separately. Messages the fly could '
+    + 'learn from grow on their own as the group is used.';
+  host.append(note);
+}
+async function loadCorpus() {
+  try {
+    const response = await fetch('/api/corpus');
+    renderCorpus(await response.json());
+  } catch { renderCorpus(null); }
+}
+async function loadReports() {
+  if (Object.keys(reports).length) return;
+  loadCorpus();
+  const response = await fetch('/api/report');
+  reports = await response.json().catch(() => ({}));
+  const pick = $('report-pick'); pick.innerHTML = '';
+  for (const name of Object.keys(reports)) {
+    const option = document.createElement('option'); option.value = name; option.textContent = name; pick.append(option);
+  }
+  pick.onchange = () => paintReport(pick.value);
+  const verdictHost = $('verdicts'); verdictHost.innerHTML = '';
+  if (!Object.keys(reports).length) { verdictHost.textContent = 'No training reports found. Run a trainer first.'; $('report-json').textContent = '—'; return; }
+  for (const [name, report] of Object.entries(reports)) {
+    const box = document.createElement('div');
+    const claim = report.verdict?.claim;
+    box.className = 'verdict ' + (report.verdict?.sufficient_data && report.verdict?.beats_majority_baseline ? 'ok' : 'bad');
+    const heading = document.createElement('strong'); heading.textContent = name;
+    const text = document.createElement('div');
+    text.textContent = claim || report.limitations || 'No verdict recorded in this report.';
+    box.append(heading, text);
+    verdictHost.append(box);
+  }
+  if (pick.value) paintReport(pick.value);
+}
+function paintReport(name) {
+  $('report-json').textContent = JSON.stringify(reports[name] ?? {}, null, 2);
+}
+
+/* The frame is fetched separately from the event stream and refreshed on a
+   timer that waits for the previous load, so a fast simulator cannot abort an
+   in-flight image (which leaves an <img> complete but permanently blank). */
+let frameLoading = false, hasFrame = false;
+function refreshFrame() {
+  if (!hasFrame || frameLoading) return;
+  const img = $('frame');
+  frameLoading = true;
+  img.onload = () => { frameLoading = false; };
+  img.onerror = () => { frameLoading = false; };
+  img.src = '/frame.jpg?t=' + Date.now();
+}
+setInterval(refreshFrame, 400);
+
+/* ---------- live state ---------- */
+const events = new EventSource('/events');
+events.onmessage = ({data}) => {
+  let state;
+  try { state = JSON.parse(data); } catch { return; }
+  lastUpdate = Date.now();
+  $('connection').textContent = 'connected';
+  live = state.chat_activity ?? {phase: 'unavailable', label: 'Gateway activity unavailable'};
+  if (!demo) {
+    activity(live.phase, live.phase === 'typing' ? 'Preparing a reply…'
+      : live.phase === 'ready' ? 'Reply generated · delivery not confirmed' : live.label, 'LIVE SIGNAL');
+  }
+  const stamp = live.at ?? live.phase;
+  if (stamp !== lastPhase) { if (live.phase !== 'waiting') transportMessage('Signal · activity', live.label); lastPhase = stamp; }
+
+  $('sim').textContent = (state.paused ? 'Paused' : 'Running') + ' · step ' + state.timestep;
+  $('neurons').textContent = state.neurons + ' motor-circuit neurons';
+  $('edges').textContent = state.edges + ' measured edges';
+  $('reward').textContent = 'Reward ' + (state.reward == null ? '—' : state.reward.toFixed(5));
+  $('episode').textContent = 'Episode ' + state.episode;
+  $('ball').textContent = state.simulation_seconds == null ? 'sim time —' : 'sim time ' + state.simulation_seconds.toFixed(2) + 's';
+  $('controller-note').textContent = state.controller === 'unavailable'
+    ? 'FlyBody is not loaded; the chat circuit and policy still run.' : state.controller;
+
+  const chat = state.chat || {};
+  $('policy-pill').textContent = chat.policy_loaded ? 'policy loaded' : 'no policy';
+  $('circuit-mini').textContent = chat.circuit_loaded
+    ? 'chat circuit RMS ' + (chat.chat_activity_rms == null ? '—' : chat.chat_activity_rms.toFixed(3))
+    : 'chat circuit unavailable';
+  if (chat.last && chat.last.connectome) renderConnectome(chat.last);
+
+  hasFrame = !!state.has_frame;
 };
-events.onerror=()=>byId('status').textContent='Reconnecting…';
-setInterval(()=>{if(lastUpdate&&Date.now()-lastUpdate>5000)byId('status').textContent='Stream stalled'},1000);
-</script></html>
+function disconnected() {
+  live = {phase: 'unknown', label: 'Disconnected · Signal status unknown'};
+  $('connection').textContent = 'disconnected';
+  if (!demo) activity(live.phase, live.label, 'OFFLINE');
+}
+events.onerror = disconnected;
+setInterval(() => { if (lastUpdate && Date.now() - lastUpdate > 5000) disconnected(); }, 1000);
+
+initParticipants();
+show('group');
+</script></body></html>
