@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "notflyguy"
+version = "0.1.0"
+description = "A connectome-powered fruit fly agent"
+requires-python = ">=3.10,<3.13"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+body = ["flybody @ git+https://github.com/TuragaLab/flybody.git"]
+
+[project.scripts]
+notflyguy-demo = "notflyguy.demo:main"
+notflyguy-server = "notflyguy.server:main"
+
+[tool.setuptools.packages.find]
+include = ["notflyguy*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
