@@ -1,1 +1,25 @@
-<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NotFlyGuy</title><style>body{margin:0;background:#10131a;color:#e9f0ff;font:16px system-ui}main{max-width:900px;margin:40px auto;padding:20px}.card{background:#181e29;border:1px solid #2d394d;border-radius:16px;padding:20px;margin:16px 0}canvas{width:100%;height:420px;background:#0b0e13;border-radius:12px}.muted{color:#8d9bb3}.live{color:#70e1a1}.row{display:flex;gap:32px;flex-wrap:wrap}</style><main><h1>🪰 NotFlyGuy</h1><div class="muted">connectome-powered fly agent · live telemetry</div><div class="card"><canvas id="fly" width="900" height="420"></canvas></div><div class="card row"><div><div class="muted">STATUS</div><div class="live">● LIVE</div></div><div><div class="muted">TIMESTEP</div><div id="step">—</div></div><div><div class="muted">NEURAL ACTIVITY</div><div id="activity">—</div></div><div><div class="muted">GOAL</div><div id="goal">idle</div></div></div><div class="card"><div class="muted">SIGNAL / HERMES</div><p id="message">waiting for Signal/Hermes</p><code>POST /api/signal {"message":"..."}</code></div></main><script>const c=document.querySelector('canvas'),x=c.getContext('2d');function draw(s){x.clearRect(0,0,c.width,c.height);x.strokeStyle='#273246';for(let i=0;i<10;i++){x.beginPath();x.moveTo(i*c.width/10,0);x.lineTo(i*c.width/10,c.height);x.stroke()}x.save();x.translate(s.x*c.width,s.y*c.height);x.rotate(s.heading);x.fillStyle='#73d6a1';x.beginPath();x.ellipse(0,0,28,16,0,0,7);x.fill();x.fillStyle='#d5b36a';x.beginPath();x.arc(25,0,8,0,7);x.fill();x.restore();step.textContent=s.timestep;activity.textContent=(s.activity*100).toFixed(1)+'%';goal.textContent=s.goal;message.textContent=s.last_message}new EventSource('/events').onmessage=e=>draw(JSON.parse(e.data));</script>
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NotFlyGuy · Live habitat</title>
+<style>body{margin:0;background:#10131a;color:#e9f0ff;font:16px system-ui}main{max-width:1000px;margin:40px auto;padding:20px}.card{background:#181e29;border:1px solid #2d394d;border-radius:16px;padding:20px;margin:16px 0}img{width:100%;aspect-ratio:2;object-fit:contain;background:#0b0e13;border-radius:12px}.muted{color:#a5b3ca}.row{display:flex;gap:32px;flex-wrap:wrap}</style>
+<main><h1>NotFlyGuy</h1><p class="muted">Live FlyBody habitat · experimental motor controller</p>
+<div class="card"><img id="frame" alt="Live rendered FlyBody simulation"></div>
+<div class="card row"><div>Status <strong id="status">Connecting…</strong></div><div>Simulation step <strong id="step">—</strong></div><div>Goal <strong id="goal">—</strong></div></div>
+<p class="muted">The current controller sends zero motor commands. Connectome activity and learned movement are not implemented yet.</p>
+<div class="card"><h2>Signal connection</h2><p>Integration pending verification.</p><p id="message"></p></div></main>
+<script>
+const byId=id=>document.getElementById(id);
+const events=new EventSource('/events');
+let lastUpdate=0;
+events.onmessage=({data})=>{
+ const state=JSON.parse(data);
+ lastUpdate=Date.now();
+ if(state.frame)byId('frame').src=state.frame;
+ byId('status').textContent=state.frame?'Live':'Waiting for renderer';
+ byId('step').textContent=state.timestep;
+ byId('goal').textContent=state.goal;
+ byId('message').textContent=state.last_message;
+};
+events.onerror=()=>byId('status').textContent='Reconnecting…';
+setInterval(()=>{if(lastUpdate&&Date.now()-lastUpdate>5000)byId('status').textContent='Stream stalled'},1000);
+</script></html>

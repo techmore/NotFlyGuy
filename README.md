@@ -34,9 +34,11 @@ python -m notflyguy.server
 open http://127.0.0.1:8765
 ```
 
-The `/api/signal` endpoint is the local Hermes/Signal ingress boundary. Hermes
-can post a message there; outbound Signal replies are deliberately not enabled
-until the destination/group and permission policy are configured.
+The native [Hermes integration](integrations/hermes/README.md) registers `/fly`
+commands and uses the existing Signal reply path. Signal connection is confirmed;
+actual message/reply delivery remains to be verified. Goals currently update the
+dashboard only. The controller sends zero motor commands; no MaleCNS neural
+network, trained movement, or neural-activity telemetry is implemented yet.
 
 ## Development
 

@@ -11,7 +11,7 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
-body = ["flybody @ git+https://github.com/TuragaLab/flybody.git"]
+body = ["flybody @ git+https://github.com/TuragaLab/flybody.git@d015e9bfe441bd90ae431bac24c55cb74bdbce26"]
 
 [project.scripts]
 notflyguy-demo = "notflyguy.demo:main"
@@ -19,6 +19,9 @@ notflyguy-server = "notflyguy.server:main"
 
 [tool.setuptools.packages.find]
 include = ["notflyguy*"]
+
+[tool.setuptools.package-data]
+notflyguy = ["web/*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
