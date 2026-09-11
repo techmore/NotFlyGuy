@@ -21,9 +21,22 @@ layer for chat, training, and scheduled goals.
 
 ## Current status
 
-Stage 0 is complete. The controller contract is intentionally independent of
-FlyBody and the eventual neural implementation, so we can test the system with
-a deterministic placeholder before taking on the heavier simulator setup.
+Stage 1 is in progress. FlyBody, MuJoCo, and the Python 3.12 environment are
+installed locally. The live server now renders FlyBody frames and streams them
+to the browser; the controller is still deterministic until the MaleCNS brain
+adapter is added.
+
+Run the live view with:
+
+```bash
+source .venv/bin/activate
+python -m notflyguy.server
+open http://127.0.0.1:8765
+```
+
+The `/api/signal` endpoint is the local Hermes/Signal ingress boundary. Hermes
+can post a message there; outbound Signal replies are deliberately not enabled
+until the destination/group and permission policy are configured.
 
 ## Development
 
@@ -37,4 +50,3 @@ source .venv/bin/activate
 python -m pip install -e '.[dev]'
 python -m notflyguy.demo
 ```
-
