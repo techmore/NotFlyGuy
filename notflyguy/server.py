@@ -1,6 +1,7 @@
 """Dependency-free live dashboard server for the first NotFlyGuy slice."""
 from __future__ import annotations
-import base64, io, json, math, time
+import base64, io, json, time
+from queue import SimpleQueue, Empty
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -18,23 +19,43 @@ class State:
         self.t = 0
         self.message = "waiting for Signal/Hermes"
         self.goal = "idle"
+        self.commands = SimpleQueue()
+        self.paused = False
         self.env = walk_imitation() if walk_imitation else None
         self.env.reset() if self.env else None
-        self.current = {"timestep": 0, "x": .5, "y": .5, "heading": 0, "activity": .25, "goal": self.goal, "last_message": self.message, "frame": None}
+        self.current = {"timestep": 0, "goal": self.goal, "last_message": self.message, "frame": None, "paused": False}
     def snapshot(self):
         return self.current
 
     def tick(self):
-        self.t += 1
-        frame = None
+        while True:
+            try:
+                message = self.commands.get_nowait()
+            except Empty:
+                break
+            self.message = message
+            if message.lower() == "pause":
+                self.paused = True
+            elif message.lower() == "resume":
+                self.paused = False
+            elif message.lower() == "reset":
+                if self.env:
+                    self.env.reset()
+                self.t = 0
+            else:
+                self.goal = message[:80] or "idle"
+        if not self.paused:
+            self.t += 1
+        frame = self.current.get("frame")
         if self.env and np and Image:
-            self.env.step(np.zeros(59, dtype=np.float32))
+            if not self.paused:
+                self.env.step(np.zeros(self.env.action_spec().shape, dtype=np.float32))
             image = Image.fromarray(self.env.physics.render(camera_id=1, height=240, width=480))
             buf = io.BytesIO(); image.save(buf, format="JPEG", quality=70)
             frame = "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
-        self.current = {"timestep": self.t, "x": .5 + .25*math.sin(self.t/18), "y": .5 + .2*math.cos(self.t/23), "heading": math.sin(self.t/18), "activity": .25 + .2*math.sin(self.t/9), "goal": self.goal, "last_message": self.message, "frame": frame}
+        self.current = {"timestep": self.t, "goal": self.goal, "last_message": self.message, "frame": frame, "paused": self.paused, "simulation_seconds": float(self.env.physics.data.time) if self.env else None}
     def command(self, message):
-        self.message, self.goal = message, message[:80] or "idle"
+        self.commands.put(message)
 
 STATE = State()
 
@@ -52,14 +73,25 @@ class Handler(BaseHTTPRequestHandler):
                     self.wfile.write(f"data: {json.dumps(STATE.snapshot())}\n\n".encode()); self.wfile.flush(); time.sleep(.1)
             except (BrokenPipeError, ConnectionResetError): pass
             return
-        path = WEB / ("index.html" if self.path == "/" else self.path.lstrip("/"))
+        path = (WEB / ("index.html" if self.path == "/" else self.path.lstrip("/"))).resolve()
         if path.is_file() and WEB in path.parents:
             self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.end_headers(); self.wfile.write(path.read_bytes()); return
         self.send_error(404)
     def do_POST(self):
         if self.path != "/api/signal": self.send_error(404); return
-        length = int(self.headers.get("Content-Length", "0")); body = json.loads(self.rfile.read(length) or b"{}")
-        message = str(body.get("message", "")).strip(); STATE.command(message); self.send_json({"ok": True, "message": message})
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            if not 0 < length <= 4096:
+                self.send_error(413); return
+            body = json.loads(self.rfile.read(length))
+            if not isinstance(body, dict) or not isinstance(body.get("message"), str):
+                self.send_error(400); return
+            message = body["message"].strip()
+            if not message:
+                self.send_error(400); return
+        except (ValueError, UnicodeError):
+            self.send_error(400); return
+        STATE.command(message); self.send_json({"ok": True, "queued": True, "message": message})
 
 def main():
     import threading

@@ -15,7 +15,7 @@ events.onmessage=({data})=>{
  const state=JSON.parse(data);
  lastUpdate=Date.now();
  if(state.frame)byId('frame').src=state.frame;
- byId('status').textContent=state.frame?'Live':'Waiting for renderer';
+ byId('status').textContent=state.paused?'Paused':state.frame?'Live':'Waiting for renderer';
  byId('step').textContent=state.timestep;
  byId('goal').textContent=state.goal;
  byId('message').textContent=state.last_message;
