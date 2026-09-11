@@ -29,6 +29,22 @@ def request_fly(raw_args):
 async def handle(raw_args):
     return await asyncio.to_thread(request_fly, raw_args)
 
+def habitat_tool(args, **kwargs):
+    command = args.get('command', 'status')
+    if command not in ('status', 'pause', 'resume', 'reset'):
+        return json.dumps({'error': 'Unsupported habitat command'})
+    try:
+        return json.dumps({'response': request_fly(command)})
+    except Exception:
+        return json.dumps({'error': 'Habitat request failed'})
+
 def register(ctx):
     ctx.register_command("fly", handler=handle, description="Watch and command NotFlyGuy",
                          args_hint="status | <goal>")
+    ctx.register_tool(
+        name='notflyguy_habitat', toolset='notflyguy', handler=habitat_tool,
+        schema={'name': 'notflyguy_habitat',
+                'description': 'Read live NotFlyGuy simulation status, or pause, resume, or reset its FlyBody environment. No learned locomotion or connectome brain is implemented yet.',
+                'parameters': {'type': 'object', 'properties': {
+                    'command': {'type': 'string', 'enum': ['status', 'pause', 'resume', 'reset']}},
+                    'required': ['command'], 'additionalProperties': False}})
