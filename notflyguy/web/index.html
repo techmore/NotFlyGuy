@@ -89,8 +89,8 @@ th{color:#94e9c7;font-weight:600}
 <section id="view-group">
 <div class="grid">
   <div class="card">
-    <h2>Group chat <span class="pill" id="policy-pill">policy: …</span></h2>
-    <p class="muted">Each incoming message drives the measured circuit. The trained readout decides whether the fly would speak and how long the reply should be. It never writes the words.</p>
+    <h2>Group chat <span class="pill" id="policy-pill">policy: …</span> <span class="pill" id="reply-pill">replies: …</span></h2>
+    <p class="muted">Each incoming message drives the measured connectome. The trained readout decides what it <em>would</em> do; the words come from the local language model. The readout is displayed, not enforced — it does not beat its baselines, so it is not allowed to silently ignore anyone.</p>
     <form class="controls" id="group-form">
       <select id="sender" aria-label="Simulated participant"></select>
       <input id="input" aria-label="Simulated group message" maxlength="500" placeholder="Say something in the group…" required>
@@ -154,11 +154,10 @@ th{color:#94e9c7;font-weight:600}
   </div>
 </section>
 
-<p class="muted">Simulated messages are scripted and never sent to Signal. Desk movement is animation, not learned behaviour. Live Signal traffic appears on the transport monitor above. The circuit is a truncated motor-centred subgraph, not a whole brain.</p>
+<p class="muted">Messages you send here are answered by the local language model and never reach Signal. The connectome drives the internal state and the decision chip; it does not write the words, and it is not a trained policy. Desk movement is animation. Live Signal traffic appears as events with the fly's decision — Hermes owns those replies, so their text is not shown here. The circuit is a truncated motor-centred subgraph, not a whole brain.</p>
 </main>
 <script>
 const $ = id => document.getElementById(id);
-const delay = ms => new Promise(r => setTimeout(r, ms));
 
 const PARTICIPANTS = [
   {id: 'alice', name: 'Alice'},
@@ -169,7 +168,7 @@ const CT_NAMES = ['mean activity','mean |activity|','activity RMS','mean motor',
 const MAX_BAR = 1.0;
 
 let live = {phase: 'waiting', label: 'Waiting for Signal'};
-let lastPhase = null, demo = false, lastUpdate = 0, reports = {};
+let lastPhase = null, demo = false, lastUpdate = 0, reports = {}, lastSignalAt = 0;
 
 /* ---------- scene / activity ---------- */
 function activity(phase, label, source) {
@@ -196,15 +195,15 @@ function initParticipants() {
     select.append(option);
   }
 }
-function appendGroupMessage({senderName, text, decision, simulated}) {
+function appendGroupMessage({senderName, text, decision, simulated, fly, quiet}) {
   const wrap = document.createElement('div');
-  wrap.className = 'msg';
+  wrap.className = 'msg' + (fly ? ' fly' : '');
   const meta = document.createElement('div'); meta.className = 'meta';
   const who = document.createElement('strong'); who.textContent = senderName;
   meta.append(who);
   if (simulated) { const s = document.createElement('span'); s.className = 'chip info'; s.textContent = 'simulated'; meta.append(s); }
   if (decision && decision.addressed) { const a = document.createElement('span'); a.className = 'chip info'; a.textContent = 'addressed to fly'; meta.append(a); }
-  if (decision && decision.policy_loaded) {
+  if (decision && decision.policy_loaded && !fly) {
     const prob = decision.respond_probability;
     const chip = document.createElement('span');
     chip.className = 'chip ' + (decision.would_respond ? 'speak' : 'silent');
@@ -213,15 +212,16 @@ function appendGroupMessage({senderName, text, decision, simulated}) {
     const len = document.createElement('span');
     len.className = 'chip'; len.textContent = 'reply length ≈ ' + (decision.predicted_reply_length * 100).toFixed(0) + '%';
     meta.append(len);
-  } else if (decision) {
+  } else if (decision && !fly) {
     const chip = document.createElement('span'); chip.className = 'chip silent'; chip.textContent = 'no policy loaded'; meta.append(chip);
   }
-  if (decision && decision.connectome) {
+  if (decision && decision.connectome && !fly) {
     const ct = document.createElement('span');
     ct.className = 'chip'; ct.textContent = 'circuit RMS ' + decision.connectome.rms.toFixed(3);
     meta.append(ct);
   }
-  const body = document.createElement('div'); body.className = 'body'; body.textContent = text;
+  const body = document.createElement('div'); body.className = 'body' + (quiet ? ' muted' : '');
+  body.textContent = text;
   wrap.append(meta, body);
   $('group-feed').append(wrap);
   while ($('group-feed').children.length > 40) $('group-feed').firstChild.remove();
@@ -258,18 +258,77 @@ async function sendGroupMessage(senderId, senderName, text) {
   if (demo) return;
   demo = true; $('send').disabled = true;
   activity('reading', 'Reading the group message', 'GROUP CHAT');
-  const response = await fetch('/api/group-message', {
-    method: 'POST', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({text, sender: senderId, sender_name: senderName, source: 'simulator'}),
-  });
-  const payload = await response.json().catch(() => ({}));
+  const pending = appendPendingFly();
+  let payload = {};
+  try {
+    const response = await fetch('/api/group-message', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({text, sender: senderId, sender_name: senderName, source: 'simulator'}),
+    });
+    payload = await response.json();
+  } catch (error) {
+    payload = {};
+  }
   const decision = payload.decision || null;
   appendGroupMessage({senderName, text, decision, simulated: true});
   renderConnectome(decision);
-  activity('typing', decision && decision.would_respond ? 'Would reply in the group' : 'Holding back in the group', 'GROUP CHAT');
-  await delay(900);
+  pending.remove();
+  renderFlyReply(decision);
   demo = false; $('send').disabled = false;
   activity(live.phase, live.label, 'LIVE SIGNAL');
+}
+function appendPendingFly() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg fly';
+  wrap.innerHTML = '<div class="meta"><strong>NotFlyGuy</strong>'
+    + '<span class="chip info">thinking…</span></div><div class="body muted">…</div>';
+  $('group-feed').append(wrap);
+  $('group-feed').scrollTop = $('group-feed').scrollHeight;
+  return wrap;
+}
+function appendSignalEvent(decision) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg';
+  const meta = document.createElement('div'); meta.className = 'meta';
+  const who = document.createElement('strong');
+  who.textContent = 'Signal · ' + (decision.sender_name || 'participant');
+  meta.append(who);
+  const tag = document.createElement('span'); tag.className = 'chip info';
+  tag.textContent = 'live'; meta.append(tag);
+  if (decision.addressed) {
+    const a = document.createElement('span'); a.className = 'chip info';
+    a.textContent = 'addressed to fly'; meta.append(a);
+  }
+  if (decision.policy_loaded) {
+    const chip = document.createElement('span');
+    chip.className = 'chip ' + (decision.would_respond ? 'speak' : 'silent');
+    chip.textContent = (decision.would_respond ? 'would speak' : 'would stay silent')
+      + ' · p=' + decision.respond_probability.toFixed(3);
+    meta.append(chip);
+  }
+  if (decision.connectome) {
+    const ct = document.createElement('span'); ct.className = 'chip';
+    ct.textContent = 'circuit RMS ' + decision.connectome.rms.toFixed(3); meta.append(ct);
+  }
+  const body = document.createElement('div'); body.className = 'body muted';
+  body.textContent = 'Hermes owns this reply; text is not shown here.';
+  wrap.append(meta, body);
+  $('group-feed').append(wrap);
+  while ($('group-feed').children.length > 40) $('group-feed').firstChild.remove();
+  $('group-feed').scrollTop = $('group-feed').scrollHeight;
+}
+function renderFlyReply(decision) {  if (!decision) return;
+  if (decision.reply) {
+    appendGroupMessage({senderName: 'NotFlyGuy', text: decision.reply, decision, fly: true});
+    return;
+  }
+  if (decision.reply_skipped) {
+    appendGroupMessage({senderName: 'NotFlyGuy', decision,
+      text: '(held back: ' + decision.reply_skipped + ')', fly: true, quiet: true});
+  } else if (decision.reply_error) {
+    appendGroupMessage({senderName: 'NotFlyGuy', decision: null,
+      text: '(no reply — ' + decision.reply_error + ')', fly: true, quiet: true});
+  }
 }
 $('group-form').addEventListener('submit', event => {
   event.preventDefault();
@@ -428,10 +487,19 @@ events.onmessage = ({data}) => {
 
   const chat = state.chat || {};
   $('policy-pill').textContent = chat.policy_loaded ? 'policy loaded' : 'no policy';
+  $('reply-pill').textContent = chat.replies_enabled ? 'replies on' : 'monitor only';
   $('circuit-mini').textContent = chat.circuit_loaded
     ? 'chat circuit RMS ' + (chat.chat_activity_rms == null ? '—' : chat.chat_activity_rms.toFixed(3))
     : 'chat circuit unavailable';
   if (chat.last && chat.last.connectome) renderConnectome(chat.last);
+
+  /* Real Signal traffic shows up as events carrying the fly's decision. Message
+     text is deliberately not sent to the browser, matching the transport monitor. */
+  const feed = chat.feed || [];
+  for (const item of feed) {
+    if (item.source === 'signal' && (item.at || 0) > lastSignalAt) appendSignalEvent(item);
+  }
+  if (feed.length) lastSignalAt = Math.max(lastSignalAt, ...feed.map(i => i.at || 0));
 
   hasFrame = !!state.has_frame;
 };

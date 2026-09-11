@@ -45,17 +45,35 @@ neurons, then induce the motor-centred subgraph.
 ```bash
 python -m notflyguy.server          # http://127.0.0.1:8765
 python -m notflyguy.server --no-body   # chat circuit + policy only, no MuJoCo
+python -m notflyguy.server --no-replies   # monitor only, generate nothing
 ```
+
+The dashboard is a working chat interface. Type into **Group chat** and the fly
+answers: the message drives the measured circuit, the trained readout produces
+the decision you see in the chip, and the words come from a local
+OpenAI-compatible language model (`--llm-url`, default `http://127.0.0.1:8083`;
+set `NOTFLYGUY_LLM_URL` / `NOTFLYGUY_LLM_MODEL` to change it). Without a
+reachable model the dashboard still runs and degrades to monitoring.
+
+The readout is displayed, **not enforced**. It does not beat its baselines, so
+by default it is not allowed to suppress a reply; `--policy-gate` enables that
+for experiments and will make the fly ignore people.
 
 Three views:
 
-- **Group chat** — send a simulated multi-participant message; watch the circuit
-  advance and the trained policy decide whether to speak and how long to be.
-  Simulated messages never touch Signal and are never trained on.
+- **Group chat** — talk to the fly, watch the circuit advance per message, and
+  see the decision chip and the reply. Real Signal traffic appears here as
+  events carrying the fly's decision; Hermes owns those replies, so their text
+  is deliberately not sent to the browser.
 - **Research** — the live FlyBody frame (served as `/frame.jpg`, not inlined
   into the event stream) plus controller telemetry.
-- **Training** — the raw training reports, including verdicts that say
-  `NOT ESTABLISHED`. Those are real results, not missing data.
+- **Training** — corpus readiness against the gates, and the raw training
+  reports including verdicts that say `NOT ESTABLISHED`. Those are real results,
+  not missing data.
+
+Known limitation: on the local 2B 4-bit model, speaker attribution across a
+group conversation is unreliable — it will muddle who said what. That is a model
+capability limit; see `notflyguy/persona.py` for the measurements.
 
 ## Train the group-chat policy
 

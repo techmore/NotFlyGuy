@@ -37,7 +37,8 @@ class Habitat:
     def __init__(self, env=None, controller=None, chat_brain=None, policy=None,
                  chat_activity=None, policy_path=DEFAULT_POLICY,
                  shadow_log=DEFAULT_SHADOW_LOG, frame_size=(240, 480),
-                 frame_quality=70, frame_interval=2):
+                 frame_quality=70, frame_interval=2, llm=None, policy_gate=False,
+                 history_limit=12, reply_max_tokens=200):
         self._lock = threading.RLock()
         self.env = env
         self.controller = controller
@@ -46,6 +47,11 @@ class Habitat:
         self.policy_path = Path(policy_path) if policy_path else None
         self.shadow_log = Path(shadow_log) if shadow_log else None
         self.chat_activity = chat_activity or ChatActivity()
+        self.llm = llm
+        self.policy_gate = bool(policy_gate)
+        self.history_limit = max(2, int(history_limit))
+        self.reply_max_tokens = int(reply_max_tokens)
+        self.chat_history: list[dict] = []
         self.frame_size = frame_size
         self.frame_quality = frame_quality
         self.frame_interval = max(int(frame_interval), 1)
@@ -80,8 +86,9 @@ class Habitat:
     # -- construction ------------------------------------------------------
     @classmethod
     def create(cls, circuit_root=DEFAULT_CIRCUIT_ROOT, policy_path=DEFAULT_POLICY,
-               shadow_log=DEFAULT_SHADOW_LOG, with_body=True, **kwargs) -> 'Habitat':
-        """Best-effort construction: a missing body, circuit, or policy degrades."""
+               shadow_log=DEFAULT_SHADOW_LOG, with_body=True, llm_url=None,
+               llm_model=None, llm=None, **kwargs) -> 'Habitat':
+        """Best-effort construction: a missing body, circuit, policy, or model degrades."""
         env = controller = chat_brain = policy = None
         if with_body:
             try:
@@ -110,8 +117,15 @@ class Habitat:
                 policy = ChatPolicy.load(policy_path)
             except Exception:
                 policy = None
+        if llm is None and llm_url:
+            try:
+                from .llm import LocalLLM
+                candidate = LocalLLM(llm_url, model=llm_model)
+                llm = candidate if candidate.available() else None
+            except Exception:
+                llm = None
         return cls(env=env, controller=controller, chat_brain=chat_brain, policy=policy,
-                   policy_path=policy_path, shadow_log=shadow_log, **kwargs)
+                   policy_path=policy_path, shadow_log=shadow_log, llm=llm, **kwargs)
 
     def _reset_chat_tracker(self):
         from .groupchat import ChatStateTracker
@@ -205,57 +219,104 @@ class Habitat:
 
     # -- live group chat ---------------------------------------------------
     def observe_group_message(self, payload: dict) -> dict:
-        """Advance the chat circuit for one message and log the policy decision."""
+        """Advance the chat circuit for one message and log the policy decision.
+
+        Generation happens outside the lock: the language model can take
+        seconds, and the simulator must keep ticking. Replies are only produced
+        for messages this process owns -- dashboard chat. Real Signal traffic is
+        answered by Hermes, and replying here too would double-post.
+        """
         with self._lock:
-            source = str(payload.get('source', 'simulator'))
-            group_raw = str(payload.get('group') or 'default')
-            group_id = pseudonym(group_raw, DEFAULT_SALT)
-            if group_id not in self._known_groups:
-                self._known_groups.add(group_id)
-                self.chat_counts['groups'] = len(self._known_groups)
-            sender_raw = str(payload.get('sender') or 'unknown')
-            text = str(payload.get('text') or '')[:2000]
-            aliases = payload.get('aliases') or ('notflyguy', 'not-rocky', 'not rocky')
-            addressed = any(a.lower() in text.lower() for a in aliases if a)
-            event = ChatEvent(
-                session_id=group_id, group_id=group_id,
-                sender_id=pseudonym(sender_raw, DEFAULT_SALT),
-                sender_name=str(payload.get('sender_name') or 'participant')[:60],
-                text=text, timestamp=float(payload.get('timestamp') or time.time()),
-                is_agent=False, addressed_to_agent=addressed,
-                index=int(self.chat_counts['messages']),
-                chat_type=str(payload.get('chat_type') or 'group'), source=source,
-            )
-            decision = {'source': source, 'group_id': group_id,
-                        'sender_name': event.sender_name, 'addressed': addressed,
-                        'at': time.time(), 'policy_loaded': self.policy is not None}
-            if self.chat_tracker is None:
-                decision['error'] = 'connectome unavailable'
-            else:
-                import numpy as np
-                from .groupchat import CONTEXT_NAMES
-                context, connectome = self.chat_tracker.observe_user(event)
-                features = np.concatenate([context, connectome])
-                decision['connectome'] = {
-                    'rms': float(np.sqrt(np.mean(self.chat_brain.activity ** 2))),
-                    'peak': float(self.chat_brain.activity.max()),
-                    'mean_motor': float(self.chat_brain.motor_activity.mean()),
-                    'features': [round(float(v), 5) for v in connectome],
-                }
-                if self.policy is not None:
-                    probability = float(self.policy.predict_proba(features.reshape(1, -1))[0])
-                    length = float(self.policy.predict_length(features.reshape(1, -1))[0])
-                    decision['respond_probability'] = round(probability, 4)
-                    decision['predicted_reply_length'] = round(max(0.0, min(1.0, length)), 4)
-                    decision['would_respond'] = bool(probability >= 0.5)
-                decision['context'] = dict(zip(CONTEXT_NAMES, (round(float(v), 4) for v in context)))
-            self.chat_counts['messages'] += 1
-            self.chat_counts['decisions'] += 1
-            self.chat_last_decision = decision
-            self._append_feed(decision)
-            self._append_shadow(decision, source)
+            decision, message_text, chat_type = self._ingest_group_message(payload)
+        self._maybe_reply(decision, message_text, chat_type, payload)
+        with self._lock:
             self._snapshot = self._build_snapshot()
-            return decision
+        return decision
+
+    def _ingest_group_message(self, payload: dict):
+        source = str(payload.get('source', 'simulator'))
+        group_raw = str(payload.get('group') or 'default')
+        group_id = pseudonym(group_raw, DEFAULT_SALT)
+        if group_id not in self._known_groups:
+            self._known_groups.add(group_id)
+            self.chat_counts['groups'] = len(self._known_groups)
+        sender_raw = str(payload.get('sender') or 'unknown')
+        text = str(payload.get('text') or '')[:2000]
+        aliases = payload.get('aliases') or ('notflyguy', 'not-rocky', 'not rocky')
+        addressed = any(a.lower() in text.lower() for a in aliases if a)
+        chat_type = str(payload.get('chat_type') or 'group')
+        event = ChatEvent(
+            session_id=group_id, group_id=group_id,
+            sender_id=pseudonym(sender_raw, DEFAULT_SALT),
+            sender_name=str(payload.get('sender_name') or 'participant')[:60],
+            text=text, timestamp=float(payload.get('timestamp') or time.time()),
+            is_agent=False, addressed_to_agent=addressed,
+            index=int(self.chat_counts['messages']),
+            chat_type=chat_type, source=source,
+        )
+        decision = {'source': source, 'group_id': group_id,
+                    'sender_name': event.sender_name, 'addressed': addressed,
+                    'at': time.time(), 'policy_loaded': self.policy is not None}
+        if self.chat_tracker is None:
+            decision['error'] = 'connectome unavailable'
+        else:
+            import numpy as np
+            from .groupchat import CONTEXT_NAMES
+            context, connectome = self.chat_tracker.observe_user(event)
+            features = np.concatenate([context, connectome])
+            decision['connectome'] = {
+                'rms': float(np.sqrt(np.mean(self.chat_brain.activity ** 2))),
+                'peak': float(self.chat_brain.activity.max()),
+                'mean_motor': float(self.chat_brain.motor_activity.mean()),
+                'features': [round(float(v), 5) for v in connectome],
+            }
+            if self.policy is not None:
+                import numpy as np
+                probability = float(self.policy.predict_proba(features.reshape(1, -1))[0])
+                length = float(self.policy.predict_length(features.reshape(1, -1))[0])
+                decision['respond_probability'] = round(probability, 4)
+                decision['predicted_reply_length'] = round(max(0.0, min(1.0, length)), 4)
+                decision['would_respond'] = bool(probability >= 0.5)
+            decision['context'] = dict(zip(CONTEXT_NAMES, (round(float(v), 4) for v in context)))
+        self.chat_counts['messages'] += 1
+        self.chat_counts['decisions'] += 1
+        self.chat_last_decision = decision
+        self._append_feed(decision)
+        self._append_shadow(decision, source)
+        if source != 'signal':
+            self.chat_history.append({'role': 'user',
+                                      'content': f'{event.sender_name}: {text}'})
+            del self.chat_history[:-self.history_limit]
+        return decision, text, chat_type
+
+    def _maybe_reply(self, decision: dict, text: str, chat_type: str,
+                     payload: dict) -> None:
+        """Generate and record a reply, outside the lock."""
+        source = decision.get('source')
+        if self.llm is None or source == 'signal':
+            return
+        if self.policy_gate and not decision.get('would_respond', True):
+            decision['reply_skipped'] = 'policy gate held the reply back'
+            return
+        from .persona import system_prompt
+        messages = [{'role': 'system',
+                     'content': system_prompt(decision, chat_type,
+                                              speaker=decision.get('sender_name'))}]
+        messages.extend(self.chat_history[-self.history_limit:])
+        try:
+            reply = self.llm.complete(messages, max_tokens=self.reply_max_tokens)
+        except Exception as error:
+            decision['reply_error'] = f'{type(error).__name__}: {error}'
+            return
+        if not reply:
+            decision['reply_error'] = 'model returned an empty reply'
+            return
+        decision['reply'] = reply
+        with self._lock:
+            self.chat_history.append({'role': 'assistant', 'content': reply})
+            del self.chat_history[:-self.history_limit]
+            if self.chat_tracker is not None:
+                self.chat_tracker.observe_agent(reply, time.time())
 
     def observe_agent_reply(self, text: str = '') -> None:
         with self._lock:
@@ -315,6 +376,9 @@ class Habitat:
                 'policy_path': str(self.policy_path) if self.policy_path else None,
                 'circuit_loaded': self.chat_brain is not None,
                 'chat_activity_rms': chat_rms,
+                'replies_enabled': self.llm is not None,
+                'reply_model': getattr(self.llm, 'model', None) if self.llm else None,
+                'policy_gate': self.policy_gate,
                 'counts': dict(self.chat_counts),
                 'last': self.chat_last_decision,
                 'feed': list(self.chat_feed[-20:]),

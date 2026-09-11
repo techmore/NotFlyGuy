@@ -235,16 +235,33 @@ def serve(habitat: Habitat, host: str = HOST, port: int = PORT, block: bool = Tr
 
 
 def main():
+    import os
     parser = argparse.ArgumentParser(description='Run the NotFlyGuy habitat and dashboard.')
     parser.add_argument('--host', default=HOST)
     parser.add_argument('--port', type=int, default=PORT)
     parser.add_argument('--no-body', action='store_true',
                         help='skip loading FlyBody (chat and circuit only)')
     parser.add_argument('--policy', default=None, help='path to a trained chat policy .npz')
+    parser.add_argument('--llm-url', default=os.environ.get('NOTFLYGUY_LLM_URL',
+                                                            'http://127.0.0.1:8083'),
+                        help='OpenAI-compatible endpoint used to answer dashboard chat')
+    parser.add_argument('--llm-model', default=os.environ.get('NOTFLYGUY_LLM_MODEL'))
+    parser.add_argument('--no-replies', action='store_true',
+                        help='monitor only; do not generate replies in dashboard chat')
+    parser.add_argument('--policy-gate', action='store_true',
+                        help='let the (unvalidated) policy suppress replies; off by default')
     args = parser.parse_args()
     from .habitat import DEFAULT_POLICY
     habitat = Habitat.create(policy_path=args.policy or DEFAULT_POLICY,
-                             with_body=not args.no_body)
+                             with_body=not args.no_body,
+                             llm_url=None if args.no_replies else args.llm_url,
+                             llm_model=args.llm_model,
+                             policy_gate=args.policy_gate)
+    chat = habitat.snapshot()['chat']
+    if chat['replies_enabled']:
+        print(f"Replies enabled via {args.llm_url} (model {chat['reply_model']})")
+    else:
+        print('Replies disabled: no language model reachable; monitoring only')
     serve(habitat, host=args.host, port=args.port)
 
 
