@@ -24,8 +24,14 @@ a live timestep and image status. This does not replace Signal delivery testing.
 
 The profile now uses its existing local MLX model on port 8083 because the
 previous Nous provider lacked authentication. A local completion was verified.
-That MLX process and the habitat currently run in terminal sessions; automatic
-startup/recovery has not been established for them.
+The MLX process and habitat now run as launchd services:
+`ai.hermes.mlx-e2b` and `com.techmore.notflyguy`. Both were observed running;
+the habitat passed its live simulation/JPEG check after migration.
+
+The local model answered a simple completion, but a real Hermes conversation
+produced malformed tool output and empty-response retries. Conversational
+Signal replies are therefore still unverified. The deterministic `/fly`
+commands do not use the model.
 
 The localhost viewer URL works on the Mac running the habitat. Remote browser
 access is not configured. Goals are recorded, but do not yet produce trained
