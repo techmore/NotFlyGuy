@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Fly · Training observatory</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1013;--panel:#111a1e;--line:#29383e;--ink:#edf4f2;--muted:#a4b8bb;--mint:#99f5cd;--amber:#f3cc85;--red:#ffa59d;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55}button{font:inherit}a{color:var(--mint)}.skip{position:absolute;top:-60px;left:12px;padding:10px;background:var(--panel);z-index:2}.skip:focus{top:12px}header{border-bottom:1px solid var(--line);background:#0e1619}.topbar{max-width:1440px;margin:auto;padding:20px 36px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;gap:12px;align-items:center}.mark{width:36px;height:36px;border:1px solid var(--mint);border-radius:10px;display:grid;place-items:center;color:var(--mint);font-size:23px;font-weight:800}.brand strong{font-size:18px;letter-spacing:.08em}.brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:.12em;text-transform:uppercase}.tag,.badge{font:11px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.06em;border:1px solid var(--line);padding:5px 9px;border-radius:5px;color:var(--muted)}main{max-width:1440px;margin:auto;padding:38px 36px 24px}.hero{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:26px}.eyebrow{color:var(--mint);font-size:11px;font-weight:650;letter-spacing:.16em;text-transform:uppercase;margin:0 0 10px}h1{font-size:clamp(28px,4vw,42px);line-height:1.15;font-weight:600;letter-spacing:-.04em;margin:0 0 12px}p{margin:0;color:var(--muted)}.hero p{max-width:620px}.feeds{min-width:245px;display:grid;gap:8px}.feed{display:flex;gap:9px;align-items:flex-start;font-size:12px;color:var(--muted)}.dot{height:7px;width:7px;margin-top:6px;border-radius:50%;background:var(--amber);flex-shrink:0}.feed[data-health=ok] .dot{background:var(--mint)}.feed[data-health=error] .dot{background:var(--red)}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:22px}.metric{border:1px solid var(--line);border-radius:10px;padding:20px;background:linear-gradient(135deg,#172329,#11191d)}.metric:first-child{border-top:2px solid var(--mint)}.label{color:var(--muted);font-size:12px}.value{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-variant-numeric:tabular-nums;font-size:clamp(25px,3vw,36px);letter-spacing:-.05em;line-height:1.3;margin:12px 0 7px;overflow-wrap:anywhere}.metric small{color:var(--muted);font-size:11px}.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(320px,1fr);gap:22px;align-items:start}.stack{display:grid;gap:22px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}.panel-head{padding:19px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}h2{font-size:15px;font-weight:600;margin:0;letter-spacing:-.01em}h3{font-size:13px;margin:0 0 6px}.body{padding:22px}.details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 16px;margin:0}.details dt{color:var(--muted);font-size:11px;margin-bottom:5px}.details dd{margin:0;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:14px;overflow-wrap:anywhere}.wide{grid-column:1/-1}.note{font-size:12px;color:var(--muted);margin-top:18px;line-height:1.65}.reward-list{display:grid;gap:15px;margin-top:20px}.reward-label{display:flex;justify-content:space-between;gap:12px;font:12px ui-monospace,SFMono-Regular,Consolas,monospace;margin-bottom:7px;overflow-wrap:anywhere}.track{height:7px;background:#243239;border-radius:4px;overflow:hidden}.fill{height:100%;background:var(--mint);border-radius:4px}.negative .fill{background:var(--red)}.negative .reward-number{color:var(--red)}.positive .reward-number{color:var(--mint)}.empty{padding:18px;border:1px dashed var(--line);border-radius:7px;color:var(--muted);font-size:12px}.circuit{display:grid;gap:0;margin-top:20px}.stage{position:relative;border-left:2px solid var(--line);padding:0 0 22px 19px;margin-left:5px}.stage:before{content:"";position:absolute;width:9px;height:9px;left:-5.5px;top:5px;border-radius:50%;background:var(--mint)}.stage:last-child{padding-bottom:0;border-color:transparent}.stage p{font-size:12px}.stage .badge{display:inline-block;padding:1px 6px;margin-left:7px;color:var(--mint);font-size:10px}.stage.frozen:before{background:#9faebc}.stage.frozen .badge{color:#bdcbd6}.command{font:22px ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--mint);background:#0c1417;border:1px solid var(--line);border-radius:7px;padding:15px;margin:18px 0 12px;overflow-wrap:anywhere}.proposal-meta{display:flex;gap:16px;justify-content:space-between;margin:15px 0;color:var(--muted);font:12px ui-monospace,SFMono-Regular,Consolas,monospace}.buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}button{border:1px solid var(--line);border-radius:6px;padding:10px 13px;cursor:pointer;background:#1b2a30;color:var(--ink);font-weight:600;font-size:12px;min-height:42px}button.primary{background:var(--mint);border-color:var(--mint);color:#10241c}button.danger{color:var(--red);border-color:#65423f;background:#281d1e}button:hover:enabled{filter:brightness(1.15)}button:disabled{opacity:.45;cursor:not-allowed}:focus-visible{outline:3px solid var(--amber);outline-offset:4px}.control-note{padding:12px;border-left:2px solid var(--amber);background:#211f18;color:#e3d5b5;font-size:12px}.feedback{font-size:12px;min-height:20px;margin-top:12px;color:var(--amber)}.audit{margin:0;padding:0;list-style:none;max-height:280px;overflow:auto}.audit li{display:grid;grid-template-columns:minmax(90px,.6fr) 1fr;gap:10px;border-bottom:1px solid var(--line);padding:12px 0;font-size:12px}.audit li:first-child{padding-top:0}.audit li:last-child{border:0;padding-bottom:0}.audit code{color:var(--mint);overflow-wrap:anywhere}.audit span{color:var(--muted);overflow-wrap:anywhere}footer{display:flex;justify-content:space-between;gap:16px;margin-top:26px;padding-top:18px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}[hidden]{display:none!important}
+@media(min-width:1200px){.body{padding:24px}}@media(max-width:900px){.layout{grid-template-columns:1fr}.hero{align-items:flex-start;flex-direction:column}.feeds{min-width:0}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.topbar,main{padding-left:22px;padding-right:22px}}@media(max-width:480px){main{padding:26px 14px}.topbar{padding:16px 14px}.tag{display:none}.metric{padding:15px}.metrics{gap:10px}.panel-head,.body{padding:17px}.details{grid-template-columns:repeat(2,minmax(0,1fr))}.buttons button{flex:1 1 auto}.proposal-meta,footer{flex-direction:column;gap:8px}.audit li{grid-template-columns:1fr}}
+</style>
+<style>#requirements-list{max-height:240px;overflow:auto;padding-right:8px}#skills-list{max-height:360px;overflow:auto;padding-right:8px}@media(max-width:480px){#skills-list .reward-label{flex-direction:column;gap:4px}}</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to dashboard</a>
+<header><div class="topbar"><div class="brand"><span class="mark" aria-hidden="true">ƒ</span><div><strong>FLY</strong><small>DragonRealms research adapter</small></div></div><span class="tag">TRAINING OBSERVATORY / 01</span></div></header>
+<main id="main">
+<div class="hero"><div><p class="eyebrow">Connectome-guided learning</p><h1>A window into adaptation.</h1><p>Inspect the training ledger, circuit activity, and observer proposals. Every value below comes from the connected APIs.</p></div><div class="feeds"><div class="feed" id="state-feed"><span class="dot" aria-hidden="true"></span><span id="state-health" role="status">Observer · connecting</span></div><div class="feed" id="training-feed"><span class="dot" aria-hidden="true"></span><span id="training-health" role="status">Training ledger · connecting</span></div></div></div>
+<section class="metrics" aria-label="Cumulative training metrics">
+<article class="metric"><div class="label">Cumulative reward</div><div class="value" id="total-reward">—</div><small>Sum across recorded transitions</small></article>
+<article class="metric"><div class="label">Episodes</div><div class="value" id="episodes">—</div><small>Recorded episode starts</small></article>
+<article class="metric"><div class="label">Transitions</div><div class="value" id="transitions">—</div><small>Recorded environment steps</small></article>
+<article class="metric"><div class="label">Update calls</div><div class="value" id="updates">—</div><small>Not evidence of performance improvement</small></article>
+</section>
+<div class="layout"><div class="stack">
+<section class="panel"><div class="panel-head"><h2>Leveling progress</h2><span class="badge" id="level-label">WAITING FOR TELEMETRY</span></div><div class="body"><p id="level-summary">No skill requirements recorded by this run yet.</p><div class="reward-list" id="requirements-list"></div></div></section>
+<section class="panel"><div class="panel-head"><h2>Skill acquisition</h2><span class="badge" id="skill-count">NO SKILL SNAPSHOT</span></div><div class="body"><p id="skill-summary">This run predates per-skill telemetry. Values will appear with a telemetry-enabled run.</p><div class="reward-list" id="skills-list"></div><p class="note">Bars show absorbed EXP toward the next rank. Rank and EXP gains compare with this run’s starting snapshot. Pooled EXP is still waiting to convert.</p></div></section>
+<section class="panel"><div class="panel-head"><h2>Experience across all skills</h2><span class="badge">RECORDED PILOT STATE</span></div><div class="body"><dl class="details"><div><dt>Total absorbed EXP</dt><dd id="exp-absorbed">—</dd></div><div><dt>Currently pooled EXP</dt><dd id="exp-pooled">—</dd></div><div><dt>Absorbed gain this run</dt><dd id="exp-gain">—</dd></div></dl><p class="note">Absorbed EXP includes completed ranks. Pooled EXP is waiting to convert and is shown separately. A small reward applies only to useful absorption toward unmet circle requirements.</p></div></section>
+<section class="panel"><div class="panel-head"><h2>Latest recorded training step</h2><span class="badge">PILOT LOG</span></div><div class="body"><dl class="details"><div><dt>Circle</dt><dd id="pilot-circle">—</dd></div><div><dt>Unmet requirement rows</dt><dd id="pilot-gap">—</dd></div><div><dt>Step reward</dt><dd id="pilot-reward">—</dd></div><div class="wide"><dt>Location</dt><dd id="pilot-room">—</dd></div><div><dt>Projection change RMS</dt><dd id="pilot-delta">—</dd></div><div><dt>Recorded</dt><dd id="pilot-at">—</dd></div><div class="wide"><dt>Source log</dt><dd id="pilot-log">—</dd></div></dl><p class="note">Latest saved step; this does not establish that the pilot is currently running. A zero parameter change means this update did not alter the projection.</p></div></section>
+<section class="panel"><div class="panel-head"><h2>Training ledger</h2><span class="badge" id="episode-status">AWAITING DATA</span></div><div class="body"><dl class="details"><div><dt>Last episode</dt><dd id="episode">—</dd></div><div><dt>Mode / target</dt><dd id="episode-mode">—</dd></div><div><dt>Steps</dt><dd id="episode-steps">—</dd></div><div><dt>Episode reward</dt><dd id="episode-reward">—</dd></div><div><dt>Started</dt><dd id="episode-start">—</dd></div><div><dt>Finished</dt><dd id="episode-end">—</dd></div></dl><p class="note" id="ledger-note">Waiting for a saved training ledger.</p></div></section>
+<section class="panel"><div class="panel-head"><h2>Reward components</h2><span class="badge">CUMULATIVE</span></div><div class="body"><p>What contributes to the recorded reward.</p><div id="reward-bars" class="reward-list"></div><p class="empty" id="reward-empty">No reward components reported yet.</p><p class="note">Bar length shows absolute magnitude relative to the largest reported component. Signed values distinguish rewards from penalties. These are totals, not a learning curve.</p></div></section>
+<section class="panel"><div class="panel-head"><h2>Game observation</h2><span class="badge" id="game-status">UNKNOWN</span></div><div class="body"><dl class="details"><div class="wide"><dt>Location</dt><dd id="location">—</dd></div><div><dt>Circle</dt><dd id="circle">—</dd></div><div><dt>Health</dt><dd id="health">—</dd></div><div><dt>Combat</dt><dd id="combat">—</dd></div><div><dt>Roundtime</dt><dd id="roundtime">—</dd></div><div><dt>Observation ID</dt><dd id="observation-id">—</dd></div><div><dt>Last event</dt><dd id="last-event">—</dd></div></dl></div></section>
+<section class="panel"><div class="panel-head"><h2>Recent command audit</h2><span class="badge">OBSERVER ADAPTER</span></div><div class="body"><ul id="audit" class="audit" aria-label="Recent observer command outcomes"></ul><p class="empty" id="audit-empty">No observer commands recorded.</p></div></section>
+</div><div class="stack">
+<section class="panel"><div class="panel-head"><h2>Learning architecture</h2><span class="badge">FLY CIRCUIT</span></div><div class="body"><p>Adaptation around a fixed recurrent network.</p><div class="circuit"><div class="stage"><h3>Input projection <span class="badge">TRAINABLE</span></h3><p>Maps game observations into circuit inputs. Reward-modulated updates can change this adapter projection.</p></div><div class="stage frozen"><h3>Recurrent connectome <span class="badge">FROZEN</span></h3><p>The recurrent connectivity stays fixed. Neural activity evolves as observations pass through it; activity is not evidence that those recurrent weights are learning.</p></div><div class="stage"><h3>Action readout <span class="badge">TRAINABLE</span></h3><p>Learns action preferences from circuit features when the training pilot enables its learner.</p></div></div><p class="note">Trainable describes capability, not proof of an active update. Observer proposals are separate from the training pilot’s learned policy.</p><dl class="details" style="margin-top:22px"><div><dt>Activity RMS</dt><dd id="activity">—</dd></div><div><dt>Feature count</dt><dd id="features">—</dd></div><div><dt>Observer reward</dt><dd id="observer-reward">—</dd></div><div class="wide"><dt>Circuit namespace</dt><dd id="namespace">—</dd></div></dl></div></section>
+<section class="panel"><div class="panel-head"><h2>Observer controls</h2><span class="badge" id="observer-mode">UNKNOWN</span></div><div class="body"><p class="control-note">These controls apply only to the observer adapter. They do not control the separate training pilot.</p><div class="command" id="proposal-action">No current proposal</div><p id="proposal-reason">Waiting for an observation.</p><div class="proposal-meta"><span id="proposal-confidence">Confidence —</span><span id="proposal-expiry">No expiry available</span></div><p class="note" id="approval-note">Approval requires a fresh, ready, armed observer and an unexpired proposal.</p><div class="buttons"><button class="primary" id="approve" disabled>Approve proposal</button><button id="pause" disabled>Pause observer</button><button class="danger" id="stop" disabled>Stop observer</button></div><p class="note">Pause suspends observer proposals. Stop disarms the observer and stops its transport; restarting requires the host process.</p><p class="feedback" id="control-feedback" role="status" aria-live="polite"></p></div></section>
+</div></div>
+<footer><span>FLY / DragonRealms · Scientific training console</span><span>Snapshot telemetry · no inferred history</span></footer>
+</main>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const numeric = value => typeof value === 'number' && Number.isFinite(value);
+const number = (value, digits = 0) => numeric(value) ? value.toLocaleString(undefined, {maximumFractionDigits: digits}) : '—';
+const put = (id, value) => { const text = value == null ? '—' : String(value); if ($(id).textContent !== text) $(id).textContent = text; };
+const timestamp = value => numeric(value) ? new Date(value * 1000).toLocaleString() : '—';
+const feeds = {state: {at: 0, error: '', empty: false}, training: {at: 0, error: '', empty: false}};
+let state = null, busy = false, invalidatedProposal = null;
+const rewardRows = new Map();
+let auditSignature = '';
+const proposalKey = proposal => proposal ? JSON.stringify([proposal.action, proposal.expires_at]) : null;
+async function request(path, options = {}) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 6000);
+  try {
+    const response = await fetch(path, {...options, cache: 'no-store', signal: controller.signal});
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('Invalid API response');
+    return data;
+  } finally { clearTimeout(timeout); }
+}
+function renderState(s) {
+  const o = s.observation || {}, f = s.fly || {}, p = s.proposal;
+  put('game-status', o.status ?? 'unknown'); put('location', o.location); put('circle', number(o.circle));
+  put('health', numeric(o.health_fraction) ? number(o.health_fraction * 100, 1) + '%' : '—');
+  put('combat', typeof o.in_combat === 'boolean' ? (o.in_combat ? 'In combat' : 'Out of combat') : '—');
+  put('roundtime', numeric(o.roundtime_seconds) ? number(o.roundtime_seconds, 1) + ' s' : '—');
+  put('observation-id', number(o.observation_id)); put('last-event', s.last_event);
+  put('activity', numeric(f.activity_rms) ? f.activity_rms.toFixed(5) : '—');
+  put('features', Array.isArray(f.features) ? number(f.features.length) : '—');
+  put('namespace', f.namespace); put('observer-reward', number(s.reward, 4));
+  put('observer-mode', s.armed === false ? 'DISARMED' : s.paused === true ? 'PAUSED' : s.armed === true ? 'ARMED' : 'UNKNOWN');
+  put('proposal-action', p?.action || 'No current proposal'); put('proposal-reason', p?.reason || 'No observer action is awaiting approval.');
+  put('proposal-confidence', 'Confidence ' + (numeric(p?.confidence) ? number(p.confidence * 100, 1) + '%' : '—'));
+  put('pause', s.paused ? 'Resume observer' : 'Pause observer');
+  const audit = Array.isArray(s.audit) ? s.audit.slice(-20).reverse() : [];
+  const signature = JSON.stringify(audit);
+  if (signature !== auditSignature) {
+    auditSignature = signature;
+    const rows = audit.map(item => {
+      const li = document.createElement('li'), command = document.createElement('code'), outcome = document.createElement('span');
+      command.textContent = item.action ?? 'Unknown command';
+      outcome.textContent = (item.approved === true ? 'Approved' : item.approved === false ? 'Rejected' : 'Unknown outcome') + ' · observation ' + (item.observation_id ?? '—') + ' · ' + (item.outcome ?? '—');
+      li.append(command, outcome); return li;
+    });
+    $('audit').replaceChildren(...rows);
+  }
+  $('audit-empty').hidden = audit.length > 0;
+}
+function renderTraining(t) {
+  const last = t.last || {};
+  const rows = Array.isArray(t.requirements?.rows) ? t.requirements.rows.filter(r => numeric(r.have) && numeric(r.need) && r.need > 0) : [];
+  put('level-label', numeric(t.circle) ? 'CIRCLE ' + t.circle + ' → ' + (t.requirements?.circle ?? '—') : 'WAITING FOR TELEMETRY');
+  put('level-summary', rows.length ? rows.filter(r => r.have >= r.need).length + ' / ' + rows.length + ' requirements met' : 'No skill requirements recorded by this run yet.');
+  function progressRow(title, detail, percent) {
+    const root = document.createElement('div'), label = document.createElement('div'), name = document.createElement('span'), value = document.createElement('span'), track = document.createElement('div'), fill = document.createElement('div');
+    label.className = 'reward-label'; name.textContent = title; value.textContent = detail;
+    track.className = 'track'; fill.className = 'fill'; fill.style.width = Math.max(0, Math.min(100, percent)) + '%';
+    track.setAttribute('role', 'progressbar'); track.setAttribute('aria-label', title); track.setAttribute('aria-valuemin', '0'); track.setAttribute('aria-valuemax', '100'); track.setAttribute('aria-valuenow', String(Math.round(Math.max(0, Math.min(100, percent)))));
+    label.append(name, value); track.append(fill); root.append(label, track); return root;
+  }
+  $('requirements-list').replaceChildren(...rows.map(r => progressRow(r.label, number(r.have) + ' / ' + number(r.need) + (r.have >= r.need ? ' · met' : ''), r.have / r.need * 100)));
+  const skills = Object.entries(t.skills || {}).filter(([,s]) => numeric(s.rank) && (s.rank > 0 || s.exp > 0 || s.pooledExp > 0));
+  skills.sort((a,b) => (b[1].absorbedExp - (t.initial_skills?.[b[0]]?.absorbedExp ?? b[1].absorbedExp)) - (a[1].absorbedExp - (t.initial_skills?.[a[0]]?.absorbedExp ?? a[1].absorbedExp)));
+  put('skill-count', Object.keys(t.skills || {}).length ? skills.length + ' SKILLS WITH EXPERIENCE' : 'NO SKILL SNAPSHOT');
+  put('skill-summary', Object.keys(t.skills || {}).length ? 'Recorded skill progress, largest absorbed EXP gains first.' : 'This run predates per-skill telemetry. Values will appear with a telemetry-enabled run.');
+  $('skills-list').replaceChildren(...skills.map(([id,s]) => {
+    const initial = t.initial_skills?.[id];
+    const gain = numeric(initial?.absorbedExp) && numeric(s.absorbedExp) ? s.absorbedExp - initial.absorbedExp : null;
+    const rankGain = numeric(initial?.rank) ? s.rank - initial.rank : null;
+    return progressRow(id.replaceAll('_',' '), 'Rank ' + number(s.rank) + (rankGain > 0 ? ' (+' + number(rankGain) + ')' : '') + ' · EXP gain ' + number(gain) + ' · pooled ' + number(s.pooledExp), numeric(s.nextRankExp) && s.nextRankExp > 0 ? s.exp / s.nextRankExp * 100 : 0);
+  }));
+  put('exp-absorbed', number(t.experience?.absorbed));
+  put('exp-pooled', number(t.experience?.pooled));
+  put('exp-gain', numeric(t.experience?.absorbed) && numeric(t.initial_experience?.absorbed) ? number(t.experience.absorbed - t.initial_experience.absorbed) : '—');
+  const step = t.latest_transition || {};
+  put('pilot-circle', number(step.circle)); put('pilot-gap', number(step.requirement_gap));
+  put('pilot-reward', number(step.reward, 3)); put('pilot-room', step.room);
+  put('pilot-at', timestamp(step.at)); put('pilot-log', t.latest_log);
+  const delta = step.connectome_learning?.weight_delta_rms;
+  put('pilot-delta', numeric(delta) ? delta.toExponential(3) : '—');
+  for (const key of ['episodes', 'transitions', 'updates']) put(key, number(t[key]));
+  put('total-reward', number(t.total_reward, 3)); put('episode-status', 'Reported: ' + (last.status ?? 'no episode'));
+  put('episode', number(last.episode)); put('episode-mode', (last.mode ?? '—') + ' / ' + (last.target ?? '—'));
+  put('episode-steps', number(last.steps)); put('episode-reward', number(last.reward, 3));
+  put('episode-start', timestamp(last.started_at)); put('episode-end', timestamp(last.finished_at));
+  put('ledger-note', feeds.training.empty ? 'No training ledger available. The endpoint may be unconfigured or its saved file unreadable.' : 'Saved pilot ledger; episode status and target are reported, not verified success. Update calls do not prove performance improvement. Observer telemetry below is separate from the pilot.');
+  const components = t.reward_components && typeof t.reward_components === 'object' && !Array.isArray(t.reward_components) ? t.reward_components : {};
+  const entries = Object.entries(components).filter(([, value]) => numeric(value)).sort(([a], [b]) => a.localeCompare(b));
+  const keys = new Set(entries.map(([key]) => key));
+  for (const [key, row] of rewardRows) if (!keys.has(key)) { row.root.remove(); rewardRows.delete(key); }
+  const largest = Math.max(0, ...entries.map(([, value]) => Math.abs(value)));
+  for (const [key, value] of entries) {
+    let row = rewardRows.get(key);
+    if (!row) {
+      const root = document.createElement('div'), label = document.createElement('div'), name = document.createElement('span'), amount = document.createElement('span'), track = document.createElement('div'), fill = document.createElement('div');
+      label.className = 'reward-label'; amount.className = 'reward-number'; track.className = 'track'; fill.className = 'fill';
+      track.setAttribute('aria-hidden', 'true'); name.textContent = key; label.append(name, amount); track.append(fill); root.append(label, track);
+      row = {root, amount, fill}; rewardRows.set(key, row); $('reward-bars').append(root);
+    }
+    row.root.className = value < 0 ? 'negative' : 'positive';
+    row.amount.textContent = (value > 0 ? '+' : '') + number(value, 4);
+    row.fill.style.width = (largest ? Math.abs(value) / largest * 100 : 0) + '%';
+  }
+  $('reward-empty').hidden = entries.length > 0;
+}
+function refreshStatus() {
+  for (const [key, feed] of Object.entries(feeds)) {
+    const age = feed.at ? Math.floor((Date.now() - feed.at) / 1000) : null;
+    const label = key === 'state' ? 'Observer' : 'Training ledger';
+    const ledgerAge = key === 'training' && numeric(feed.updatedAt) ? Math.max(0, Math.floor((Date.now() - feed.updatedAt) / 1000)) : null;
+    const health = feed.error ? 'error' : age === null || age > 10 || feed.empty || (key === 'training' && (ledgerAge === null || ledgerAge > 30)) ? 'stale' : 'ok';
+    $(key + '-feed').dataset.health = health;
+    put(key + '-health', label + ' · ' + (feed.error ? feed.error + (age !== null ? ' · last success ' + age + 's ago' : '') : age === null ? 'connecting' : feed.empty ? 'no data available' : age > 10 ? 'stale · fetched ' + age + 's ago' : 'fetched ' + age + 's ago'));
+    if (key === 'training' && !feed.error && !feed.empty && age !== null) put('training-health', 'Training ledger · ' + (ledgerAge === null ? 'update time unknown' : (ledgerAge > 30 ? 'stale snapshot · ' : '') + 'saved ' + ledgerAge + 's ago') + ' · fetched ' + age + 's ago');
+    if (key === 'state' && !feed.error && state?.observation?.status !== 'ready') {
+      $(key + '-feed').dataset.health = 'stale';
+      put('state-health', 'Observer · no ready game observation');
+      put('observer-mode', state?.armed === false ? 'DISARMED' : 'OBSERVER ONLY');
+    }
+  }
+  const p = state?.proposal, expiry = p?.expires_at;
+  const remaining = numeric(expiry) ? Math.max(0, expiry * 1000 - Date.now()) : 0;
+  const fresh = feeds.state.at > 0 && Date.now() - feeds.state.at <= 10000 && !feeds.state.error && !feeds.state.empty;
+  const valid = !!p?.action && numeric(expiry) && remaining > 0 && proposalKey(p) !== invalidatedProposal;
+  $('approve').disabled = busy || !fresh || state?.armed !== true || state?.paused !== false || state?.observation?.status !== 'ready' || !valid;
+  $('pause').disabled = busy || !fresh || state?.armed !== true;
+  $('stop').disabled = busy || state?.armed !== true;
+  put('proposal-expiry', !p ? 'No pending proposal' : !numeric(expiry) ? 'Expiry unknown · approval disabled' : remaining <= 0 ? 'Expired · approval disabled' : 'Expires in ' + Math.ceil(remaining / 1000) + 's');
+}
+async function poll(key) {
+  try {
+    const data = await request('/api/' + key);
+    if (key === 'state' && (!data.observation || typeof data.observation !== 'object')) throw new Error('Missing observation');
+    feeds[key].at = Date.now(); feeds[key].error = ''; feeds[key].empty = Object.keys(data).length === 0;
+    if (key === 'training') feeds[key].updatedAt = numeric(data.updated_at) ? data.updated_at * 1000 : null;
+    if (key === 'state') { state = data; renderState(data); } else renderTraining(data);
+  } catch (error) { feeds[key].error = error.name === 'AbortError' ? 'request timed out' : error.message; }
+  refreshStatus();
+}
+async function loop(key, delay) { await poll(key); setTimeout(() => loop(key, delay), delay); }
+async function control(action) {
+  refreshStatus();
+  if ($(action).disabled) return;
+  busy = true; refreshStatus(); put('control-feedback', 'Sending observer ' + action + ' request…');
+  if (action === 'approve') invalidatedProposal = proposalKey(state?.proposal);
+  try {
+    const result = await request('/api/' + action, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(action === 'pause' ? {paused: !state.paused} : {})});
+    if (result.ok === false || result.error) throw new Error(result.error || result.message || 'Request rejected');
+    put('control-feedback', result.message || (action === 'stop' ? 'Observer stopped.' : action === 'pause' ? 'Observer pause request accepted.' : 'Observer proposal approved.'));
+  } catch (error) { put('control-feedback', 'Observer request failed: ' + (error.name === 'AbortError' ? 'timed out; outcome unknown.' : error.message) + (action === 'pause' ? ' The host must provide /api/pause.' : '')); }
+  await poll('state'); busy = false; refreshStatus();
+}
+for (const action of ['approve', 'pause', 'stop']) $(action).addEventListener('click', () => control(action));
+loop('state', 1500); loop('training', 3000); setInterval(refreshStatus, 250);
+</script>
+</body>
+</html>

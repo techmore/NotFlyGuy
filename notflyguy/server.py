@@ -236,6 +236,8 @@ def serve(habitat: Habitat, host: str = HOST, port: int = PORT, block: bool = Tr
 
 def main():
     import os
+    import subprocess
+    import sys
     parser = argparse.ArgumentParser(description='Run the NotFlyGuy habitat and dashboard.')
     parser.add_argument('--host', default=HOST)
     parser.add_argument('--port', type=int, default=PORT)
@@ -262,7 +264,27 @@ def main():
         print(f"Replies enabled via {args.llm_url} (model {chat['reply_model']})")
     else:
         print('Replies disabled: no language model reachable; monitoring only')
+    # Optional real DR pilot. It is deliberately opt-in and credential-free
+    # by default; setting the three local environment variables makes the
+    # pilot start and stop with this NotFlyGuy process.
+    dr_pilot = None
+    if os.environ.get('NOTFLYGUY_DR_AUTOSTART') == '1':
+        required = ('NOTFLYGUY_DR_URL', 'NOTFLYGUY_DR_USER', 'NOTFLYGUY_DR_PASSWORD')
+        if all(os.environ.get(k) for k in required):
+            dr_pilot = subprocess.Popen([
+                sys.executable, '-m', 'dr_adapter.pilot',
+                '--dr-url', os.environ['NOTFLYGUY_DR_URL'],
+                '--user', os.environ['NOTFLYGUY_DR_USER'],
+                '--password', os.environ['NOTFLYGUY_DR_PASSWORD'],
+                '--character', os.environ.get('NOTFLYGUY_DR_CHARACTER', 'FlyBarbarian'),
+                '--log', os.environ.get('NOTFLYGUY_DR_LOG', 'data/dr-runs/fly-autostart.jsonl'),
+            ])
+            print(f'DR Fly pilot started (pid {dr_pilot.pid})')
+        else:
+            print('DR Fly autostart requested but local credentials are incomplete')
     serve(habitat, host=args.host, port=args.port)
+    if dr_pilot is not None and dr_pilot.poll() is None:
+        dr_pilot.terminate()
 
 
 if __name__ == '__main__':

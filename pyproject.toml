@@ -37,10 +37,11 @@ notflyguy-corpus = "notflyguy.corpus:main"
 notflyguy-wiring-control = "notflyguy.wiring_control:main"
 
 [tool.setuptools.packages.find]
-include = ["notflyguy*"]
+include = ["notflyguy*", "dr_adapter*"]
 
 [tool.setuptools.package-data]
 notflyguy = ["web/*.html"]
+dr_adapter = ["*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
