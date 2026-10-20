@@ -1,9 +1,10 @@
 """Read-only runtime check: real JPEG frames and advancing simulation time."""
+import base64
 import io
 import json
-import base64
 import time
 from urllib.request import urlopen
+
 from PIL import Image
 
 

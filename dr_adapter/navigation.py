@@ -1,6 +1,8 @@
 """Routes over directed exits actually reported by the game client."""
 from collections import deque
+
 from .action_space import MOVES
+
 
 class ObservedMap:
     def __init__(self):

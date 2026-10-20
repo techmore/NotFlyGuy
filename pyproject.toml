@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "ruff>=0.6"]
 # Reading the released MaleCNS feather tables (scripts/fetch_connectome.py,
 # scripts/catalog_leg_neurons.py, scripts/extract_motor_circuit.py).
 connectome = ["pyarrow>=18"]
@@ -45,3 +45,27 @@ dr_adapter = ["*.html"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+extend-exclude = ["data", ".venv"]
+
+[tool.ruff.lint]
+# Correctness (F, E4/E7/E9, B), import order (I), and modern syntax (UP).
+# Line length is deliberately not enforced: the trainer and adapter modules
+# carry long self-describing argparse help strings and JSON report keys.
+select = ["E4", "E7", "E9", "F", "W", "I", "B", "UP"]
+ignore = [
+    "B904",   # raise ... from err: the HTTP handlers return, they do not re-raise
+    "B007",   # unused loop variables in report builders
+    "B905",   # zip(strict=...) would be churn across the report builders
+]
+
+[tool.ruff.lint.per-file-ignores]
+# The DragonRealms adapter is written one statement per line on purpose; it
+# is removable and advisory-only (see dr_adapter/README.md).
+"dr_adapter/*" = ["E401", "E701", "E702", "E731"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["notflyguy", "dr_adapter"]

@@ -1,6 +1,5 @@
 """Cross-validation splits, trainer plumbing, and the honesty gate."""
 import numpy as np
-import pytest
 
 from notflyguy.chat_policy import ChatPolicy
 from notflyguy.train_chat import evaluate_cross_validation, make_folds, verdict
@@ -8,8 +7,8 @@ from notflyguy.train_chat import evaluate_cross_validation, make_folds, verdict
 
 def _synthetic_points(count=240, sessions=12, seed=0, signal=3.0):
     """Decision-point lookalikes with a learnable relationship."""
-    from notflyguy.groupchat import CONTEXT_NAMES, DecisionPoint
     from notflyguy.connectome import ConnectomeState
+    from notflyguy.groupchat import CONTEXT_NAMES, DecisionPoint
 
     rng = np.random.default_rng(seed)
     context = rng.normal(size=(count, len(CONTEXT_NAMES)))

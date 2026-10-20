@@ -3,17 +3,19 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import secrets
+import shutil
 import signal
 import subprocess
-import shutil
 import time
+from pathlib import Path
 from urllib.request import urlopen
+
 from .fly_bridge import FlyBridge
 from .pilot import FlyPilot
-from .transport import DragonRealmsHTTPTransport
 from .reward import REWARD_VERSION
+from .transport import DragonRealmsHTTPTransport
+
 
 def copy_checkpoint(source, destination):
     """Snapshot explicit learning artifacts without modifying the source."""

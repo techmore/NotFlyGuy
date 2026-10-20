@@ -2,10 +2,7 @@
 import importlib.util
 from pathlib import Path
 
-import pytest
-
-from notflyguy.persona import (ALIASES, IDENTITY, PERSONA, style_guidance, system_prompt,
-                               technical_question)
+from notflyguy.persona import ALIASES, IDENTITY, PERSONA, style_guidance, system_prompt, technical_question
 
 PLUGIN_PATH = Path(__file__).parents[1] / 'integrations/hermes/notflyguy/__init__.py'
 

@@ -1,7 +1,8 @@
 """Replaceable controller boundary between a brain and a simulated body."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Protocol, Sequence
+from typing import Protocol
 
 
 @dataclass(frozen=True)

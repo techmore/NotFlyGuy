@@ -1,6 +1,7 @@
 """Read delayed game outcomes without issuing another command."""
 import time
 
+
 def settle_outcome(transport, initial, *, until, deadline, target=2,
                    clock=time.time, sleep=time.sleep):
     state = initial

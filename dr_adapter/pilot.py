@@ -1,18 +1,22 @@
 """Bounded autonomous DR pilot using the real HTTP transport."""
 from __future__ import annotations
-import argparse, json, time
+
+import argparse
+import json
 import re
+import time
 from pathlib import Path
+
 from .action_space import allowed_action
+from .curriculum import equipment_proposal, field_candidates, purchase_proposal
 from .fly_bridge import FlyBridge
-from .observation import from_game_state
-from .transport import DragonRealmsHTTPTransport
 from .learning import LinearActionLearner
-from .training import TrainingLedger
-from .curriculum import field_candidates, equipment_proposal, purchase_proposal
 from .navigation import ObservedMap
-from .reward import requirement_gap
+from .observation import from_game_state
 from .outcome import settle_outcome
+from .reward import requirement_gap
+from .training import TrainingLedger
+from .transport import DragonRealmsHTTPTransport
 
 TOWN = {'square': [], 'bazaar': ['w','w'], 'bank_plaza': ['w','w','w','w'], 'hall_barbarian': ['s','s','w','e']}
 # Observed-route path from square through the dense Crossing rooms into the
@@ -177,7 +181,7 @@ class FlyPilot:
                 # sufficient evidence of a kill, so do not invent a kill bonus.
                 kill = False
                 if 'invalid' in text or 'cannot' in text or 'not here' in text: self.failures += 1
-                from .reward import score_transition, REWARD_VERSION
+                from .reward import REWARD_VERSION, score_transition
                 failed_text = ('cannot', 'do not have', 'invalid', 'not here', 'must be in', 'unable', 'must wait', 'skin what')
                 command_ok = result.ok and not any(token in text for token in failed_text)
                 score = score_transition(state, after_state, command_ok=command_ok, unsafe=self.t.stopped, target_circle=self.target, kill=kill)

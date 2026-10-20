@@ -1,8 +1,11 @@
 from __future__ import annotations
+
 import time
 from dataclasses import dataclass
+
 from .action_space import Action, allowed_action
 from .observation import Observation
+
 
 @dataclass(frozen=True)
 class Proposal:
