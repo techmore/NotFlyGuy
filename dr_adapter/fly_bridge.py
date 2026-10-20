@@ -1,13 +1,17 @@
 """Small public bridge from DR observations into the downloaded Fly circuit."""
 from __future__ import annotations
+
 import numpy as np
+
 from .observation import Observation
+
 
 class FlyBridge:
     namespace = 'notflyguy.dr_adapter'
     def __init__(self, circuit_root=None, seed=0, checkpoint=None, learning_rate=.002):
-        from notflyguy.connectome import ConnectomeState, DEFAULT_ROOT
-        self.brain = ConnectomeState(circuit_root or DEFAULT_ROOT, seed=seed, drive_channels=5)
+        from notflyguy.connectome import ConnectomeState
+        # ``None`` resolves to NOTFLYGUY_DATA_ROOT or the in-repo default.
+        self.brain = ConnectomeState(circuit_root or None, seed=seed, drive_channels=5)
         self.checkpoint = checkpoint
         self.learning_rate = float(learning_rate)
         self.updates = 0

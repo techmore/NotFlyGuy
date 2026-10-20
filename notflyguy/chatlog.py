@@ -22,8 +22,9 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 # Pseudonymisation salt. Stable by default so handles are reproducible across
-# runs; override with NOTFLYGUY_ID_SALT when sharing derived data.
-DEFAULT_SALT = 'notflyguy/v1'
+# runs; override with NOTFLYGUY_ID_SALT when sharing derived data. Read once at
+# import so every module (trainer, habitat, plugin) agrees on the same handles.
+DEFAULT_SALT = os.environ.get('NOTFLYGUY_ID_SALT') or 'notflyguy/v1'
 MAX_TEXT = 8000
 AGENT_SENDER = 'agent'
 

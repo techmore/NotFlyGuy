@@ -4,6 +4,30 @@ import sqlite3
 import pytest
 
 
+@pytest.fixture(scope='session', autouse=True)
+def circuit_root(tmp_path_factory):
+    """Guarantee a loadable circuit for the whole session.
+
+    If the measured circuit has been bootstrapped (or ``NOTFLYGUY_DATA_ROOT``
+    already points at one) it is used as-is. Otherwise a synthetic stand-in is
+    written once and ``NOTFLYGUY_DATA_ROOT`` is pointed at it, so a fresh clone
+    runs the full suite without the MaleCNS download. The stand-in is random:
+    tests assert contracts (shapes, determinism, bounds), never biology.
+    """
+    from notflyguy.paths import CIRCUIT_FILE, data_root
+    from notflyguy.synthetic import write_synthetic_circuit
+
+    root = data_root()
+    if (root / CIRCUIT_FILE).exists():
+        yield root
+        return
+    root = tmp_path_factory.mktemp('synthetic-circuit')
+    write_synthetic_circuit(root)
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setenv('NOTFLYGUY_DATA_ROOT', str(root))
+        yield root
+
+
 def _create_schema(connection):
     connection.executescript(
         """
@@ -159,7 +183,6 @@ class FakeEnv:
         return FakeTimestep(self._reward, last)
 
     def action_spec(self):
-        import numpy as np
         return type('Spec', (), {'shape': (4,)})()
 
 

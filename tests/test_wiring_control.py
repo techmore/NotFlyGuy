@@ -2,8 +2,7 @@
 import numpy as np
 import pytest
 
-from notflyguy.wiring_control import (_degrees, build_shuffled_circuit, evaluate,
-                                      shuffle_edges)
+from notflyguy.wiring_control import _degrees, build_shuffled_circuit, evaluate, shuffle_edges
 
 
 def _toy_graph():
@@ -99,15 +98,9 @@ def test_build_shuffled_writes_a_loadable_circuit(toy_circuit, tmp_path):
 
 
 # --- evaluate: orchestration only (no real dataset needed) -------------------
-def test_evaluate_refuses_to_claim_on_a_tiny_corpus(toy_circuit, group_events):
+def test_evaluate_refuses_to_claim_on_a_tiny_corpus(circuit_root, group_events):
     """A 13-point corpus must never yield a wiring claim, however the AUCs order."""
-    pytest.importorskip('scipy')
-    from pathlib import Path
-    real_root = Path('data/malecns-v1.0')
-    if not (real_root / 'motor-circuit.npz').exists():
-        pytest.skip('measured circuit not extracted')
-
-    report = evaluate(Path('data/malecns-v1.0/motor-circuit.npz'), group_events,
+    report = evaluate(circuit_root / 'motor-circuit.npz', group_events,
                       shuffle_seeds=(0,), folds=2)
     assert report['verdict']['sufficient_data'] is False
     assert report['verdict']['claim'].startswith('NOT ESTABLISHED')
@@ -115,14 +108,8 @@ def test_evaluate_refuses_to_claim_on_a_tiny_corpus(toy_circuit, group_events):
     assert 'must not be read as evidence' in report['verdict']['claim']
 
 
-def test_evaluate_runs_and_compares_against_shuffles(group_events):
-    pytest.importorskip('scipy')
-    from pathlib import Path
-    real_root = Path('data/malecns-v1.0')
-    if not (real_root / 'motor-circuit.npz').exists():
-        pytest.skip('measured circuit not extracted')
-
-    report = evaluate(Path('data/malecns-v1.0/motor-circuit.npz'), group_events,
+def test_evaluate_runs_and_compares_against_shuffles(circuit_root, group_events):
+    report = evaluate(circuit_root / 'motor-circuit.npz', group_events,
                       shuffle_seeds=(0, 1), folds=2, workdir=None)
     assert report['real']['mean_roc_auc'] is not None
     assert len(report['shuffles']) == 2

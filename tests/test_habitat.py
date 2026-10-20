@@ -136,6 +136,18 @@ def test_group_message_without_a_policy_reports_clearly(tmp_path):
     assert 'respond_probability' not in decision
 
 
+def test_aliases_payload_is_validated(tmp_path):
+    """A bare-string alias used to be iterated per character, so 'n' matched everything."""
+    habitat = make_habitat(tmp_path)
+    plain = {'text': 'nothing to see here', 'sender': 'x'}
+    assert habitat.observe_group_message({**plain, 'aliases': 'notflyguy'})['addressed'] is False
+    assert habitat.observe_group_message({**plain, 'aliases': 'nothing'})['addressed'] is True
+    assert habitat.observe_group_message({**plain, 'aliases': ['', 7, None]})['addressed'] is False
+    assert habitat.observe_group_message({**plain, 'aliases': {'bad': 1}})['addressed'] is False
+    assert habitat.observe_group_message(
+        {'text': 'hey not-rocky', 'sender': 'x', 'aliases': []})['addressed'] is True
+
+
 def test_group_message_without_a_circuit_reports_an_error(tmp_path):
     habitat = make_habitat(tmp_path, brain=False)
     decision = habitat.observe_group_message({'text': 'hi', 'sender': 'x'})

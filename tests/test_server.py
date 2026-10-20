@@ -188,6 +188,14 @@ def test_events_stream_is_not_inline_framed(live_server):
     assert b'data:image/jpeg;base64' not in chunk
 
 
-def test_handler_returns_503_without_a_habitat(monkeypatch):
+def test_handler_returns_503_without_a_habitat(live_server, monkeypatch):
+    base, _ = live_server
     monkeypatch.setattr(server_module, 'HABITAT', None)
-    assert server_module.HABITAT is None
+    for route in ('/api/state', '/api/report', '/api/corpus'):
+        with pytest.raises(HTTPError) as info:
+            _get(base + route)
+        assert info.value.code == 503, route
+        assert json.loads(info.value.read()) == {'error': 'habitat unavailable'}
+    assert _post(base + '/api/signal', {'message': 'pause'})[0] == 503
+    # The page itself still serves, so the dashboard can show its own error state.
+    assert _get(base + '/')[0] == 200
