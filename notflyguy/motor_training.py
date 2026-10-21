@@ -13,11 +13,13 @@ biological motor program.
 from __future__ import annotations
 
 import json
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Mapping
 
 import numpy as np
+
+from .paths import CATALOG_FILE, DEFAULT_DATA_ROOT, data_root
 
 # --- Frozen dimensions -----------------------------------------------------
 # The catalog holds 381 leg motor neurons and ``walk_on_ball`` exposes 59
@@ -58,25 +60,27 @@ DEFAULT_ACTUATOR_NAMES = (
     'walker/adhere_claw_T3_left', 'walker/adhere_claw_T3_right',
 )
 
-DEFAULT_CATALOG_ROOT = Path(__file__).resolve().parents[1] / 'data' / 'malecns-v1.0'
+DEFAULT_CATALOG_ROOT = DEFAULT_DATA_ROOT
 
 
 # --- Readout construction --------------------------------------------------
-def make_readout(root=DEFAULT_CATALOG_ROOT, actuator_names=None, seed=0, limits=None):
+def make_readout(root=None, actuator_names=None, seed=0, limits=None):
     """Build the frozen :class:`LegMotorReadout` without a MuJoCo import.
 
-    ``limits`` is the per-actuator ``[min, max]`` from the live action spec.
-    Omitting it falls back to a single ``(0, 1)`` range, which is *not* the live
-    FlyBody spec; pass ``limits_from_spec(env.action_spec())`` to search the
-    space the body actually accepts.
+    ``root`` defaults to :func:`notflyguy.paths.data_root` (honouring
+    ``NOTFLYGUY_DATA_ROOT``). ``limits`` is the per-actuator ``[min, max]``
+    from the live action spec. Omitting it falls back to a single ``(0, 1)``
+    range, which is *not* the live FlyBody spec; pass
+    ``limits_from_spec(env.action_spec())`` to search the space the body
+    actually accepts.
     """
     from .motor_projection import LegMotorReadout
 
-    root = Path(root)
-    catalog = root / 'leg-motor-catalog.json'
+    catalog = data_root(root) / CATALOG_FILE
     if not catalog.exists():
         raise FileNotFoundError(
-            f'Missing {catalog}. Run scripts/catalog_leg_neurons.py first.'
+            f'Missing {catalog}. Run scripts/catalog_leg_neurons.py first, or point '
+            'NOTFLYGUY_DATA_ROOT at a directory that holds it.'
         )
     neurons = json.loads(catalog.read_text())['neurons']
     names = tuple(actuator_names) if actuator_names is not None else DEFAULT_ACTUATOR_NAMES

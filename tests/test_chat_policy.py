@@ -2,8 +2,15 @@
 import numpy as np
 import pytest
 
-from notflyguy.chat_policy import (ChatPolicy, accuracy, brier_score, majority_baseline,
-                                   mean_absolute_error, roc_auc, sigmoid)
+from notflyguy.chat_policy import (
+    ChatPolicy,
+    accuracy,
+    brier_score,
+    majority_baseline,
+    mean_absolute_error,
+    roc_auc,
+    sigmoid,
+)
 
 
 def test_sigmoid_is_stable_at_extremes():

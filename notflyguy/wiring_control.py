@@ -19,14 +19,14 @@ from __future__ import annotations
 
 import argparse
 import json
-from collections import Counter
 from pathlib import Path
 
 import numpy as np
 
 from .chatlog import default_db_paths, load_all
-from .connectome import DEFAULT_ROOT, ConnectomeState
+from .connectome import ConnectomeState
 from .groupchat import build_decision_points
+from .paths import CIRCUIT_FILE, data_root
 from .train_chat import evaluate_cross_validation
 
 DEFAULT_OUTPUT = 'data/training/wiring-control'
@@ -231,7 +231,9 @@ def evaluate(source_npz, events, shuffle_seeds=SHUFFLE_SEEDS, folds=5, l2=1.0,
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--circuit', default=str(DEFAULT_ROOT / 'motor-circuit.npz'))
+    parser.add_argument('--circuit', default=str(data_root() / CIRCUIT_FILE),
+                        help='measured circuit to compare against (default honours '
+                             'NOTFLYGUY_DATA_ROOT)')
     parser.add_argument('--output', default=DEFAULT_OUTPUT)
     parser.add_argument('--chat-types', default='all',
                         help="comma-separated sessions.chat_type filter, or 'all'")

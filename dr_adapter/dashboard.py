@@ -1,11 +1,33 @@
 from __future__ import annotations
-import argparse, json, threading, time
-from pathlib import Path
+
+import argparse
+import json
+import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from .action_space import Action
-from .observation import Observation, parse_transcript, from_game_state
+from pathlib import Path
+from urllib.parse import urlsplit
+
+from .observation import from_game_state, parse_transcript
 from .policy import Proposal, propose
 from .transport import GameTransport, MockTransport
+
+
+def origin_ok(headers) -> bool:
+    """Same-origin check for browser writes; non-browser clients send no Origin.
+
+    ``/api/approve`` sends a real game command, so a page from any other origin
+    open in the same browser must not be able to drive it. Mirrors
+    ``notflyguy.server._origin_ok``.
+    """
+    origin = headers.get('Origin')
+    if origin is None:
+        return True
+    host = headers.get('Host')
+    if not host:
+        return False
+    parsed = urlsplit(origin)
+    return parsed.scheme in ('http', 'https') and parsed.netloc == host
 
 class Adapter:
     def __init__(self, transport: GameTransport, combat_command="attack", fly_bridge=None):
@@ -93,6 +115,7 @@ class Handler(BaseHTTPRequestHandler):
             self.send_response(200); self.send_header("Content-Type", "text/html; charset=utf-8"); self.send_header('Cache-Control', 'no-store'); self.send_header("Content-Length", str(len(body))); self.end_headers(); return self.wfile.write(body)
         return self.send_json({"error":"not found"},404)
     def do_POST(self):
+        if not origin_ok(self.headers): return self.send_json({"error": "origin not allowed"}, 403)
         try: length=int(self.headers.get("Content-Length","0")); body=json.loads(self.rfile.read(min(length,16384)))
         except (ValueError, json.JSONDecodeError): return self.send_json({"error":"invalid JSON"},400)
         if self.path == "/api/observe" and isinstance(body,dict) and isinstance(body.get("text"),str): return self.send_json(self.adapter.observe(body["text"]))
@@ -110,8 +133,8 @@ def main():
     transport = MockTransport()
     bridge = None
     if args.dr_url:
-        from .transport import DragonRealmsHTTPTransport
         from .fly_bridge import FlyBridge
+        from .transport import DragonRealmsHTTPTransport
         transport = (DragonRealmsHTTPTransport(args.dr_url, args.dr_token)
                      if args.dr_token else
                      DragonRealmsHTTPTransport.bootstrap(args.dr_url, args.user, args.password, args.character))

@@ -1,8 +1,8 @@
 """Experiment scoring; this does not change DragonRealms progression rules."""
 from __future__ import annotations
 
-from dataclasses import dataclass
 import math
+from dataclasses import dataclass
 
 REWARD_VERSION = 'balanced-requirements-exp/3'
 

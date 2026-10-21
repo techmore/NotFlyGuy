@@ -3,13 +3,15 @@ import numpy as np
 import pytest
 
 from notflyguy.connectome import DRIVE_CHANNELS
-from notflyguy.groupchat import (CONTEXT_NAMES, ChatStateTracker, build_decision_points,
-                                 dataset_stats, drive_for_agent, drive_for_user,
-                                 feature_matrix, feature_names)
-
-requires_data = pytest.mark.skipif(
-    not __import__('pathlib').Path('data/malecns-v1.0/motor-circuit.npz').exists(),
-    reason='measured circuit not extracted',
+from notflyguy.groupchat import (
+    CONTEXT_NAMES,
+    ChatStateTracker,
+    build_decision_points,
+    dataset_stats,
+    drive_for_agent,
+    drive_for_user,
+    feature_matrix,
+    feature_names,
 )
 
 
@@ -19,7 +21,6 @@ def test_drive_vectors_match_the_circuit_contract():
     assert np.isfinite(drive_for_user('x' * 5000, True, False, 1e9, 99)).all()
 
 
-@requires_data
 def test_labels_follow_the_transcript(decision_points):
     # group-1: reply, reply, no reply (user-user), reply; group-2: reply.
     assert len(decision_points) == 5
@@ -28,7 +29,6 @@ def test_labels_follow_the_transcript(decision_points):
     assert dataset_stats(decision_points)['responded'] == 4
 
 
-@requires_data
 def test_silent_decisions_carry_no_length_label(decision_points):
     silent = [p for p in decision_points if not p.respond]
     assert silent
@@ -37,7 +37,6 @@ def test_silent_decisions_carry_no_length_label(decision_points):
     assert np.isnan(y_length).sum() == len(silent)
 
 
-@requires_data
 def test_features_are_causal(decision_points, group_events):
     """A prefix of the transcript must produce identical earlier features.
 
@@ -53,7 +52,6 @@ def test_features_are_causal(decision_points, group_events):
             assert full_point.connectome == pytest.approx(partial_point.connectome)
 
 
-@requires_data
 def test_decision_points_are_deterministic(group_events):
     first = build_decision_points(group_events, seed=0)
     second = build_decision_points(group_events, seed=0)
@@ -61,7 +59,6 @@ def test_decision_points_are_deterministic(group_events):
     assert [p.connectome for p in first] == [p.connectome for p in second]
 
 
-@requires_data
 def test_live_tracker_matches_offline_features(group_events):
     """Training and serving must produce byte-identical features.
 
@@ -86,7 +83,6 @@ def test_live_tracker_matches_offline_features(group_events):
         assert connectome == pytest.approx(point.connectome)
 
 
-@requires_data
 def test_tracker_reset_clears_state(group_events):
     from notflyguy.connectome import ConnectomeState
     tracker = ChatStateTracker(ConnectomeState(seed=0))
@@ -105,7 +101,6 @@ def test_feature_names_match_matrix_width(decision_points):
     assert len(CONTEXT_NAMES) == X_context.shape[1]
 
 
-@requires_data
 def test_dataset_stats_report_group_coverage(decision_points):
     stats = dataset_stats(decision_points)
     assert stats['group_decision_points'] == len(decision_points)

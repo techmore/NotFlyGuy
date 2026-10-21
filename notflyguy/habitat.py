@@ -11,7 +11,6 @@ half-updated frame.
 """
 from __future__ import annotations
 
-import base64
 import io
 import json
 import threading
@@ -20,10 +19,12 @@ from pathlib import Path
 from queue import Empty, SimpleQueue
 
 from .chat_activity import ChatActivity
-from .chatlog import ChatEvent, pseudonym, DEFAULT_SALT
+from .chatlog import DEFAULT_SALT, ChatEvent, pseudonym
+from .paths import DEFAULT_DATA_ROOT, REPO_ROOT, data_root
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CIRCUIT_ROOT = ROOT / 'data' / 'malecns-v1.0'
+ROOT = REPO_ROOT
+DEFAULT_CIRCUIT_ROOT = DEFAULT_DATA_ROOT
+DEFAULT_ALIASES = ('notflyguy', 'not-rocky', 'not rocky')
 DEFAULT_POLICY = ROOT / 'data' / 'training' / 'chat-policy-v1' / 'policy.npz'
 DEFAULT_SHADOW_LOG = ROOT / 'data' / 'training' / 'chat-policy-v1' / 'shadow.jsonl'
 
@@ -85,10 +86,15 @@ class Habitat:
 
     # -- construction ------------------------------------------------------
     @classmethod
-    def create(cls, circuit_root=DEFAULT_CIRCUIT_ROOT, policy_path=DEFAULT_POLICY,
+    def create(cls, circuit_root=None, policy_path=DEFAULT_POLICY,
                shadow_log=DEFAULT_SHADOW_LOG, with_body=True, llm_url=None,
-               llm_model=None, llm=None, **kwargs) -> 'Habitat':
-        """Best-effort construction: a missing body, circuit, policy, or model degrades."""
+               llm_model=None, llm=None, **kwargs) -> Habitat:
+        """Best-effort construction: a missing body, circuit, policy, or model degrades.
+
+        ``circuit_root`` defaults to :func:`notflyguy.paths.data_root`, so
+        ``NOTFLYGUY_DATA_ROOT`` is honoured.
+        """
+        circuit_root = data_root(circuit_root)
         env = controller = chat_brain = policy = None
         if with_body:
             try:
@@ -242,8 +248,17 @@ class Habitat:
             self.chat_counts['groups'] = len(self._known_groups)
         sender_raw = str(payload.get('sender') or 'unknown')
         text = str(payload.get('text') or '')[:2000]
-        aliases = payload.get('aliases') or ('notflyguy', 'not-rocky', 'not rocky')
-        addressed = any(a.lower() in text.lower() for a in aliases if a)
+        aliases = payload.get('aliases')
+        if isinstance(aliases, str):
+            # A bare string would otherwise be iterated character by character,
+            # marking nearly every message as addressed to the fly.
+            aliases = (aliases,)
+        elif not isinstance(aliases, (list, tuple)):
+            aliases = ()
+        aliases = tuple(a.strip() for a in aliases if isinstance(a, str) and a.strip())
+        if not aliases:
+            aliases = DEFAULT_ALIASES
+        addressed = any(a.lower() in text.lower() for a in aliases)
         chat_type = str(payload.get('chat_type') or 'group')
         event = ChatEvent(
             session_id=group_id, group_id=group_id,
@@ -261,6 +276,7 @@ class Habitat:
             decision['error'] = 'connectome unavailable'
         else:
             import numpy as np
+
             from .groupchat import CONTEXT_NAMES
             context, connectome = self.chat_tracker.observe_user(event)
             features = np.concatenate([context, connectome])

@@ -8,12 +8,12 @@ from motor neurons to FlyBody actuators.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import numpy as np
 
 from .connectome import ConnectomeState
 from .motor_projection import LegMotorReadout
+from .paths import CATALOG_FILE, data_root
 
 # The walk_on_ball task's reward target. Kept here so the controller and the
 # trainer cannot disagree about what the fly is being asked to do.
@@ -27,11 +27,12 @@ class MotorCircuitController:
 
     def __init__(self, root, actuator_names, seed=0, decay=0.2, drive_scale=6.0,
                  action_limits=None):
-        root = Path(root)
-        catalog = root / 'leg-motor-catalog.json'
+        root = data_root(root)
+        catalog = root / CATALOG_FILE
         if not catalog.exists():
             raise FileNotFoundError(
-                f'Missing {catalog}. Run scripts/catalog_leg_neurons.py first.'
+                f'Missing {catalog}. Run scripts/catalog_leg_neurons.py first, or point '
+                'NOTFLYGUY_DATA_ROOT at a directory that holds it.'
             )
         self.brain = ConnectomeState(root, seed=seed, gain=0.8, decay=decay,
                                      drive_scale=drive_scale, drive_channels=3)

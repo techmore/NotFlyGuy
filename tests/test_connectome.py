@@ -2,13 +2,7 @@
 import numpy as np
 import pytest
 
-from notflyguy.connectome import (DRIVE_CHANNELS, DRIVE_NAMES, ConnectomeDataMissing,
-                                  ConnectomeState, load_summary)
-
-requires_data = pytest.mark.skipif(
-    not (ConnectomeState and __import__('pathlib').Path('data/malecns-v1.0/motor-circuit.npz').exists()),
-    reason='measured circuit not extracted',
-)
+from notflyguy.connectome import DRIVE_CHANNELS, DRIVE_NAMES, ConnectomeDataMissing, ConnectomeState, load_summary
 
 
 def test_drive_contract_is_documented():
@@ -16,7 +10,6 @@ def test_drive_contract_is_documented():
     assert len(set(DRIVE_NAMES)) == DRIVE_CHANNELS
 
 
-@requires_data
 def test_recurrent_operator_cannot_diverge():
     brain = ConnectomeState()
     row_sums = np.asarray(abs(brain.recurrent).sum(axis=1)).ravel()
@@ -30,7 +23,6 @@ def test_recurrent_operator_cannot_diverge():
     assert np.abs(brain.activity).max() <= 1.0 + 1e-9
 
 
-@requires_data
 def test_zero_drive_leaves_the_circuit_quiet():
     brain = ConnectomeState()
     brain.reset()
@@ -39,7 +31,6 @@ def test_zero_drive_leaves_the_circuit_quiet():
     assert np.allclose(brain.activity, 0.0)
 
 
-@requires_data
 def test_drive_changes_activity():
     brain = ConnectomeState()
     brain.reset()
@@ -54,7 +45,6 @@ def test_drive_changes_activity():
     assert np.abs(driven).max() > 0.01
 
 
-@requires_data
 def test_step_validates_drive_shape_and_finiteness():
     brain = ConnectomeState()
     with pytest.raises(ValueError):
@@ -63,7 +53,6 @@ def test_step_validates_drive_shape_and_finiteness():
         brain.step(np.array([np.nan] * DRIVE_CHANNELS))
 
 
-@requires_data
 def test_feature_contract_is_consistent():
     brain = ConnectomeState()
     assert len(brain.features()) == len(brain.feature_names()) == 8

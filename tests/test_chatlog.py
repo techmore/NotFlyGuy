@@ -1,7 +1,7 @@
 """Transcript loading: identity handling, filtering, and text-free summaries."""
 import json
 
-from notflyguy.chatlog import ChatEvent, corpus_stats, load_events, load_all, pseudonym
+from notflyguy.chatlog import ChatEvent, corpus_stats, load_all, load_events, pseudonym
 
 
 def test_pseudonym_is_stable_distinct_and_not_reversible():
@@ -86,3 +86,21 @@ def test_chat_event_is_hashable_and_frozen(group_events):
     except Exception:
         return
     raise AssertionError('ChatEvent should be immutable')
+
+
+def test_salt_can_be_overridden_through_the_environment(monkeypatch):
+    """The documented NOTFLYGUY_ID_SALT override must actually change the handles."""
+    import importlib
+
+    import notflyguy.chatlog as chatlog
+    stable = chatlog.pseudonym('+15550001')
+    monkeypatch.setenv('NOTFLYGUY_ID_SALT', 'shared-export')
+    try:
+        reloaded = importlib.reload(chatlog)
+        assert reloaded.DEFAULT_SALT == 'shared-export'
+        assert reloaded.pseudonym('+15550001') != stable
+        assert reloaded.pseudonym('+15550001') == chatlog.pseudonym('+15550001', 'shared-export')
+    finally:
+        monkeypatch.delenv('NOTFLYGUY_ID_SALT')
+        importlib.reload(chatlog)
+    assert chatlog.pseudonym('+15550001') == stable

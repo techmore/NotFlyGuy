@@ -2,6 +2,7 @@
 import json
 from collections import Counter
 from pathlib import Path
+
 import pyarrow.feather as feather
 
 root = Path(__file__).resolve().parents[1] / 'data' / 'malecns-v1.0'

@@ -1,10 +1,13 @@
 from __future__ import annotations
+
+import json
 from dataclasses import dataclass
 from typing import Protocol
-from .observation import parse_transcript, Observation, from_game_state
-from .action_space import Action
-import json
 from urllib.request import Request, urlopen
+
+from .action_space import Action
+from .observation import parse_transcript
+
 
 @dataclass(frozen=True)
 class GameEvent:

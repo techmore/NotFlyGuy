@@ -1,7 +1,10 @@
 """Durable training-run ledger for the DR adapter."""
 from __future__ import annotations
-import json, time
+
+import json
+import time
 from pathlib import Path
+
 
 class TrainingLedger:
     def __init__(self, path):

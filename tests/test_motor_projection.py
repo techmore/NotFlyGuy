@@ -2,8 +2,7 @@
 import numpy as np
 import pytest
 
-from notflyguy.motor_projection import (ACTION_MAX, ACTION_MIN, ACTION_NEUTRAL,
-                                        LegMotorReadout, to_action)
+from notflyguy.motor_projection import ACTION_MAX, ACTION_MIN, ACTION_NEUTRAL, LegMotorReadout, to_action
 
 ACTUATORS = (
     'walker/head_abduct', 'walker/abdomen',

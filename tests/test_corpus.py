@@ -1,14 +1,13 @@
 """Corpus readiness: gates, projections, and text-free reporting."""
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import pytest
 
 from notflyguy.chatlog import ChatEvent, pseudonym
-from notflyguy.corpus import (DEFAULT_GATES, project, readiness, status, summarise,
-                              weekly_counts)
-from notflyguy.groupchat import DecisionPoint
 from notflyguy.connectome import ConnectomeState
+from notflyguy.corpus import DEFAULT_GATES, project, readiness, status, summarise, weekly_counts
+from notflyguy.groupchat import DecisionPoint
 
 
 def _events(count, session_id, sender, start, spacing_hours=1.0, chat_type='group'):

@@ -14,12 +14,12 @@ radius is bounded by ``gain < 1`` and the linear part cannot diverge.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import numpy as np
 from scipy.sparse import csr_matrix, diags
 
-DEFAULT_ROOT = Path(__file__).resolve().parents[1] / 'data' / 'malecns-v1.0'
+from .paths import CIRCUIT_FILE, SUMMARY_FILE, data_root
+from .paths import DEFAULT_DATA_ROOT as DEFAULT_ROOT  # noqa: F401  (kept for callers)
 
 # Number of modeled sensory drive channels injected into upstream neurons.
 DRIVE_CHANNELS = 5
@@ -37,15 +37,17 @@ class ConnectomeDataMissing(RuntimeError):
 class ConnectomeState:
     """Fixed recurrent dynamics with an explicit, replaceable input projection."""
 
-    def __init__(self, root=DEFAULT_ROOT, seed=0, gain=0.8, decay=0.8,
+    def __init__(self, root=None, seed=0, gain=0.8, decay=0.8,
                  drive_scale=6.0, drive_channels=DRIVE_CHANNELS,
-                 circuit_file='motor-circuit.npz'):
-        root = Path(root)
+                 circuit_file=CIRCUIT_FILE):
+        root = data_root(root)
         circuit = root / circuit_file
         if not circuit.exists():
             raise ConnectomeDataMissing(
                 f'Missing {circuit}. Run scripts/fetch_connectome.py, then '
-                'scripts/catalog_leg_neurons.py, then scripts/extract_motor_circuit.py.'
+                'scripts/catalog_leg_neurons.py, then scripts/extract_motor_circuit.py '
+                '(or python scripts/bootstrap_data.py for all three), or point '
+                'NOTFLYGUY_DATA_ROOT at a directory that already holds the circuit.'
             )
         graph = np.load(circuit, allow_pickle=False)
         self.body_ids = graph['body_ids']
@@ -123,9 +125,9 @@ class ConnectomeState:
                 'mean_abs_motor', 'mean_upstream', 'mean_abs_upstream', 'peak_activity')
 
 
-def load_summary(root=DEFAULT_ROOT) -> dict:
+def load_summary(root=None) -> dict:
     """Read the recorded extraction summary, if present."""
-    path = Path(root) / 'motor-circuit.json'
+    path = data_root(root) / SUMMARY_FILE
     if not path.exists():
         raise ConnectomeDataMissing(f'Missing {path}. Run scripts/extract_motor_circuit.py.')
     return json.loads(path.read_text())

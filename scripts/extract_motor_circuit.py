@@ -1,6 +1,7 @@
 """Extract a reproducible motor-centered subgraph from released MaleCNS edges."""
 import json
 from pathlib import Path
+
 import numpy as np
 import pyarrow.feather as feather
 

@@ -108,7 +108,7 @@ class ChatPolicy:
         self.scale = np.where(scale > EPS, scale, 1.0)
 
     # -- training ----------------------------------------------------------
-    def fit(self, X, y_respond, y_length=None, sample_weight=None) -> 'ChatPolicy':
+    def fit(self, X, y_respond, y_length=None, sample_weight=None) -> ChatPolicy:
         X = np.asarray(X, dtype=float)
         y = np.asarray(y_respond, dtype=float)
         if X.ndim != 2:
@@ -179,7 +179,7 @@ class ChatPolicy:
         return path
 
     @classmethod
-    def load(cls, path) -> 'ChatPolicy':
+    def load(cls, path) -> ChatPolicy:
         path = Path(path)
         if not path.exists():
             raise FileNotFoundError(f'No trained group-chat policy at {path}')

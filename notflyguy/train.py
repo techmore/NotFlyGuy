@@ -71,8 +71,9 @@ def build_parser() -> argparse.ArgumentParser:
                              '(0 = all training seeds). The sampler still covers every training seed.')
     parser.add_argument('--seed', type=int, default=17, help='optimizer RNG seed')
     parser.add_argument('--output', default=DEFAULT_OUTPUT, help='new output directory')
-    parser.add_argument('--catalog-root', default=str(mt.DEFAULT_CATALOG_ROOT),
-                        help='directory holding leg-motor-catalog.json')
+    parser.add_argument('--catalog-root', default=None,
+                        help='directory holding leg-motor-catalog.json (default: '
+                             f'NOTFLYGUY_DATA_ROOT or {mt.DEFAULT_CATALOG_ROOT})')
     return parser
 
 
@@ -155,7 +156,7 @@ def main(argv=None) -> int:
                                      'using the live order'}), flush=True)
 
     controller = MotorCircuitController(
-        Path(args.catalog_root), actuator_names,
+        args.catalog_root, actuator_names,
         action_limits=limits_from_spec(spec))
     space = mt.ParameterSpace(controller.readout, mode=args.parameterization, rank=args.rank)
 
@@ -327,8 +328,8 @@ def main(argv=None) -> int:
             'seed_degeneracy_note': (
                 'walk_on_ball() does not randomize the episode: every seed produced a bit-identical '
                 'zero-baseline reward in this build, so "held-out seeds" are nominal only. The '
-                'genuine held-out axis here is episode length (train %d steps vs eval %d steps).'
-                % (args.steps, args.eval_steps)
+                f'genuine held-out axis here is episode length (train {args.steps} steps vs eval '
+                f'{args.eval_steps} steps).'
             ) if seeds_degenerate else 'Held-out seeds produced distinct baseline rewards.',
         },
         'limitations': [

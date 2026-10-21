@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
 import re
 import time
+from dataclasses import asdict, dataclass, field
 from typing import Any
 
 SCHEMA = "notflyguy.dr.observation/1"

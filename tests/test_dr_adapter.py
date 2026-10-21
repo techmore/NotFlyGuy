@@ -1,13 +1,14 @@
-import time
 import numpy as np
+
 from dr_adapter.action_space import allowed_action
-from dr_adapter.observation import parse_transcript, from_game_state
-from dr_adapter.policy import propose
-from dr_adapter.transport import MockTransport
 from dr_adapter.dashboard import Adapter
-from dr_adapter.reward import requirement_gap, score_transition
-from dr_adapter.learning import LinearActionLearner
 from dr_adapter.fly_bridge import FlyBridge
+from dr_adapter.learning import LinearActionLearner
+from dr_adapter.observation import from_game_state, parse_transcript
+from dr_adapter.policy import propose
+from dr_adapter.reward import requirement_gap, score_transition
+from dr_adapter.transport import MockTransport
+
 
 def test_parser_explicit_fields_and_schema():
     obs = parse_transcript("Location: Crossing\nHP: 80/100 Mana: 20/40\nYou are attacking a goblin. RT: 3")
@@ -85,8 +86,8 @@ def test_reward_uses_requirement_gap_and_target_as_primary_signal():
     assert done.reached_target and done.reward == 100
 
 def test_trainable_readout_updates_and_persists_without_changing_connectome():
-    from pathlib import Path
     import tempfile
+    from pathlib import Path
     with tempfile.TemporaryDirectory() as d:
         path = Path(d) / 'policy.json'
         learner = LinearActionLearner(path, epsilon=0, seed=3)
@@ -176,7 +177,7 @@ def test_navigation_uses_directed_observed_exits_and_reroutes():
     assert nav.next_step('square', 'square') is None
 
 def test_equipment_rotation_uses_distinct_owned_lanes_and_live_targets():
-    from dr_adapter.curriculum import equipment_proposal, WEAPONS
+    from dr_adapter.curriculum import WEAPONS, equipment_proposal
     state = {'requirements': {'circle': 2, 'rows': [
         {'label': label, 'have': 0, 'need': need} for label, need in
         zip(('1st weapon', '2nd weapon', '3rd weapon', '4th weapon'), (8, 8, 4, 2))]},
@@ -303,9 +304,11 @@ def test_frozen_mode_never_updates_or_writes_learning_checkpoints(tmp_path):
 
 def test_checkpoint_copy_preserves_source_and_records_exact_hashes(tmp_path):
     import hashlib
+
     from dr_adapter.experiment import copy_checkpoint
     source, destination = tmp_path / 'source', tmp_path / 'destination'
-    source.mkdir(); destination.mkdir()
+    source.mkdir()
+    destination.mkdir()
     bridge = FlyBridge(checkpoint=source / 'connectome.npz')
     bridge.observe(parse_transcript('Location: Field\nHP: 10/10'))
     bridge.learn(.1)
